@@ -62,7 +62,7 @@ pizzasRouter.get("/", pizzasController.getAll);
  *      500:
  *        description: Inernal Error
  */
-// ordersRouter.post("/", ordersController.create);
+pizzasRouter.post("/", pizzasController.create);
 
 pizzasRouter.get("/:id", pizzasController.getOne);
 
@@ -147,4 +147,4 @@ pizzasRouter.get("/:id", pizzasController.getOne);
  *      500:
  *        description: Inernal Error
  */
-// ordersRouter.delete("/:id", ordersController.delete);
+pizzasRouter.delete("/:id", pizzasController.delete);

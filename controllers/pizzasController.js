@@ -14,58 +14,41 @@ export class PizzasController {
   }
 
   async create(req, res, next) {
-    const {
-      customerEmail,
-      orderedProducts,
-      totalItems,
-      totalPrice,
-      totalWeight,
-      customerName,
-      companyName,
-      address,
-      additionalNotes,
-    } = req.body;
+    const { id, name, description, price, category, rating, types, sizes } =
+      req.body;
 
     if (
-      !customerEmail ||
-      !orderedProducts ||
-      !totalItems ||
-      !totalPrice ||
-      !totalWeight
+      !id ||
+      !name ||
+      !description ||
+      !price ||
+      !category ||
+      !rating ||
+      !types ||
+      !sizes
     ) {
       return next(
         ApiError.badRequest("One of the required params wasn't passed")
       );
     }
 
-    const currency = totalPrice.split(" ")[0].slice(1);
-    const specificTimezone = "America/New_York";
-    const currentDateSpecific = new Date(
-      new Date().toLocaleString("en-US", { timeZone: specificTimezone })
-    );
-    const formattedDate = formatDate(currentDateSpecific);
-    const fileName = `Invoice ${formattedDate
-      .split("/")
-      .join("")} - Select Salt (${currency})`;
-    let formattedProducts = "";
-    orderedProducts.forEach(product => {
-      const productString = `Name: ${product.name} | Quantity: ${product.quantity} | Price: $${product.price} | Weight: ${product.weight} LB\n\n`;
-      formattedProducts += productString;
+    const doc = new PizzaModel({
+      id,
+      name,
+      description,
+      price,
+      category,
+      rating,
+      types,
+      sizes,
     });
 
-    const order = await OrderModel.create({
-      customerEmail,
-      orderedProducts: formattedProducts,
-      totalItems,
-      totalPrice,
-      totalWeight,
-      customerName,
-      companyName,
-      address,
-      additionalNotes,
-    });
-
-    return res.json(order);
+    try {
+      const pizza = await doc.save();
+      return res.json(pizza);
+    } catch (err) {
+      return next(ApiError.badRequest(err));
+    }
   }
 
   async update(req, res, next) {
@@ -83,9 +66,13 @@ export class PizzasController {
   async delete(req, res, next) {
     const id = req.params.id;
 
-    await OrderModel.destroy({
-      where: { id: id },
-    });
-    return res.json({ messsage: `The order #${id} was successfully deleted` });
+    try {
+      await PizzaModel.deleteOne({ id: id });
+      return res.json({
+        messsage: `The pizza with #${id} was successfully deleted`,
+      });
+    } catch (err) {
+      return next(ApiError.badRequest(err));
+    }
   }
 }
