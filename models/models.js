@@ -1,18 +1,17 @@
-import { DataTypes } from "sequelize";
-import { sequelize } from "../db.js";
+// import { sequelize } from "../db.js";
 
-export const OrderModel = sequelize.define("order", {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  customerEmail: { type: DataTypes.STRING, allowNull: false },
-  orderedProducts: { type: DataTypes.STRING(3024), allowNull: false },
-  totalItems: { type: DataTypes.INTEGER, allowNull: false },
-  totalPrice: { type: DataTypes.STRING, allowNull: false },
-  totalWeight: { type: DataTypes.STRING, allowNull: false },
-  customerName: { type: DataTypes.STRING },
-  companyName: { type: DataTypes.STRING },
-  address: { type: DataTypes.STRING },
-  additionalNotes: { type: DataTypes.STRING },
-});
+// export const OrderModel = sequelize.define("order", {
+//   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+//   customerEmail: { type: DataTypes.STRING, allowNull: false },
+//   orderedProducts: { type: DataTypes.STRING(3024), allowNull: false },
+//   totalItems: { type: DataTypes.INTEGER, allowNull: false },
+//   totalPrice: { type: DataTypes.STRING, allowNull: false },
+//   totalWeight: { type: DataTypes.STRING, allowNull: false },
+//   customerName: { type: DataTypes.STRING },
+//   companyName: { type: DataTypes.STRING },
+//   address: { type: DataTypes.STRING },
+//   additionalNotes: { type: DataTypes.STRING },
+// });
 
 /**
  * @openapi

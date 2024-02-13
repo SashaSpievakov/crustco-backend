@@ -1,8 +1,8 @@
 import express from "express";
-import { OrdersController } from "../controllers/ordersController.js";
+// import { OrdersController } from "../controllers/ordersController.js";
 
-export const ordersRouter = express.Router();
-const ordersController = new OrdersController();
+// export const ordersRouter = express.Router();
+// const ordersController = new OrdersController();
 
 /**
  * @swagger
@@ -35,7 +35,7 @@ const ordersController = new OrdersController();
  *      500:
  *        description: Inernal Error
  */
-ordersRouter.get("/", ordersController.getAll);
+// ordersRouter.get("/", ordersController.getAll);
 
 /**
  * @swagger
@@ -62,7 +62,7 @@ ordersRouter.get("/", ordersController.getAll);
  *      500:
  *        description: Inernal Error
  */
-ordersRouter.post("/", ordersController.create);
+// ordersRouter.post("/", ordersController.create);
 
 /**
  * @swagger
@@ -106,7 +106,7 @@ ordersRouter.post("/", ordersController.create);
  *      500:
  *        description: Inernal Error
  */
-ordersRouter.put("/:id", ordersController.update);
+// ordersRouter.put("/:id", ordersController.update);
 
 /**
  * @swagger
@@ -145,4 +145,4 @@ ordersRouter.put("/:id", ordersController.update);
  *      500:
  *        description: Inernal Error
  */
-ordersRouter.delete("/:id", ordersController.delete);
+// ordersRouter.delete("/:id", ordersController.delete);

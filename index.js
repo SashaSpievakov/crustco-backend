@@ -1,11 +1,10 @@
 import express from "express";
 import "dotenv/config";
-import { sequelize } from "./db.js";
 import cors from "cors";
-import * as models from "./models/models.js";
 import { router } from "./routes/index.js";
 import { errorHandler } from "./middleware/ErrorHandlingMiddleware.js";
 import swaggerDocs from "./swagger.js";
+import mongoose from "mongoose";
 
 const PORT = process.env.PORT || 5060;
 
@@ -18,8 +17,7 @@ app.use(errorHandler);
 
 const start = async () => {
   try {
-    await sequelize.authenticate();
-    await sequelize.sync();
+    await mongoose.connect(process.env.DB_CONNECTION_STRING);
 
     app.listen(PORT, () => {
       swaggerDocs(app, PORT);
