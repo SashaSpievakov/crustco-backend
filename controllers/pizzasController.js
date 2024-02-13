@@ -53,14 +53,16 @@ export class PizzasController {
 
   async update(req, res, next) {
     const id = req.params.id;
+    const updateData = req.body;
 
-    await OrderModel.update(req.body, {
-      where: { id: id },
-    });
-    const updatedOrder = await OrderModel.findOne({
-      where: { id: id },
-    });
-    return res.json(updatedOrder);
+    try {
+      const updatedPizza = await PizzaModel.findByIdAndUpdate(id, updateData, {
+        new: true,
+      });
+      return res.json(updatedPizza);
+    } catch (err) {
+      return next(ApiError.badRequest(err));
+    }
   }
 
   async delete(req, res, next) {

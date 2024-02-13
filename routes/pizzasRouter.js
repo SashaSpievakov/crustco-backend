@@ -108,7 +108,7 @@ pizzasRouter.get("/:id", pizzasController.getOne);
  *      500:
  *        description: Inernal Error
  */
-// ordersRouter.put("/:id", ordersController.update);
+pizzasRouter.put("/:id", pizzasController.update);
 
 /**
  * @swagger
