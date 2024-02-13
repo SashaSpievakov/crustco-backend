@@ -1,17 +1,20 @@
-// import { sequelize } from "../db.js";
+import mongoose from "mongoose";
 
-// export const OrderModel = sequelize.define("order", {
-//   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-//   customerEmail: { type: DataTypes.STRING, allowNull: false },
-//   orderedProducts: { type: DataTypes.STRING(3024), allowNull: false },
-//   totalItems: { type: DataTypes.INTEGER, allowNull: false },
-//   totalPrice: { type: DataTypes.STRING, allowNull: false },
-//   totalWeight: { type: DataTypes.STRING, allowNull: false },
-//   customerName: { type: DataTypes.STRING },
-//   companyName: { type: DataTypes.STRING },
-//   address: { type: DataTypes.STRING },
-//   additionalNotes: { type: DataTypes.STRING },
-// });
+const PizzaSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true, unique: true },
+    name: { type: String, required: true, unique: true },
+    description: { type: String, required: true, unique: true },
+    price: { type: Number, required: true },
+    category: { type: Number, required: true },
+    rating: { type: Number, required: true },
+    types: { type: [Number], required: true },
+    sizes: { type: [Number], required: true },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model("Pizza", PizzaSchema);
 
 /**
  * @openapi

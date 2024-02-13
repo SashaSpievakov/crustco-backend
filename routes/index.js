@@ -1,6 +1,6 @@
 import express from "express";
-// import { ordersRouter } from "./ordersRouter.js";
+import { pizzasRouter } from "./pizzasRouter.js";
 
 export const router = express.Router();
 
-// router.use("/orders", ordersRouter);
+router.use("/pizzas", pizzasRouter);

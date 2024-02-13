@@ -1,8 +1,8 @@
 import express from "express";
-// import { OrdersController } from "../controllers/ordersController.js";
+import { PizzasController } from "../controllers/pizzasController.js";
 
-// export const ordersRouter = express.Router();
-// const ordersController = new OrdersController();
+export const pizzasRouter = express.Router();
+const pizzasController = new PizzasController();
 
 /**
  * @swagger
@@ -35,7 +35,7 @@ import express from "express";
  *      500:
  *        description: Inernal Error
  */
-// ordersRouter.get("/", ordersController.getAll);
+pizzasRouter.get("/", pizzasController.getAll);
 
 /**
  * @swagger
