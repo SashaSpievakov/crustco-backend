@@ -64,6 +64,8 @@ pizzasRouter.get("/", pizzasController.getAll);
  */
 // ordersRouter.post("/", ordersController.create);
 
+pizzasRouter.get("/:id", pizzasController.getOne);
+
 /**
  * @swagger
  * '/api/orders/{id}':

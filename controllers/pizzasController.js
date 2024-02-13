@@ -7,6 +7,12 @@ export class PizzasController {
     return res.json(pizzas);
   }
 
+  async getOne(req, res, next) {
+    const id = req.params.id;
+    const pizza = await PizzaModel.findOne({ id: id });
+    return res.json(pizza);
+  }
+
   async create(req, res, next) {
     const {
       customerEmail,
