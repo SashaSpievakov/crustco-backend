@@ -1,12 +1,18 @@
 import PizzaModel from "../models/models.js";
 
 class PizzasServices {
-  async getAll(category) {
+  async getAll(category, sortBy) {
     let dbQuery = {};
+    let dbSort = {};
     if (category !== undefined) {
       dbQuery.category = category;
     }
-    const pizzas = await PizzaModel.find(dbQuery);
+    if (sortBy) {
+      const [sortField, sortOrder] = sortBy.split(",");
+      dbSort[sortField] = sortOrder === "asc" ? 1 : -1;
+    }
+
+    const pizzas = await PizzaModel.find(dbQuery).sort(dbSort);
     return pizzas;
   }
 

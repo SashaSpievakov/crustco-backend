@@ -17,6 +17,11 @@ const pizzasController = new PizzasController();
  *         required: false
  *         type: string
  *         description: Category filter.
+ *       - name: sortBy
+ *         in: query
+ *         required: false
+ *         type: string
+ *         description: Sorting.
  *     responses:
  *      200:
  *        description: Success
