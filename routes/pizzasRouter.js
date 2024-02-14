@@ -44,6 +44,12 @@ pizzasRouter.get("/", pizzasController.getAll);
  *     tags:
  *     - Pizzas
  *     summary: Create a pizza
+ *     parameters:
+ *       - name: password
+ *         in: query
+ *         required: true
+ *         type: string
+ *         description: The access password.
  *     requestBody:
  *      required: true
  *      content:

@@ -23,6 +23,13 @@ export class PizzasController {
 
   async create(req, res, next) {
     try {
+      const password = req.query.password;
+      if (password !== process.env.API_PASSWORD) {
+        return next(
+          ApiError.forbidden("You don't have permission to access the resource")
+        );
+      }
+
       const pizza = await PizzasService.create(req.body);
       return res.json(pizza);
     } catch (err) {
@@ -33,6 +40,13 @@ export class PizzasController {
   async update(req, res, next) {
     try {
       const id = req.params.id;
+      const password = req.query.password;
+      if (password !== process.env.API_PASSWORD) {
+        return next(
+          ApiError.forbidden("You don't have permission to access the resource")
+        );
+      }
+
       const updatedPizza = await PizzasService.update(id, req.body);
       return res.json(updatedPizza);
     } catch (err) {
@@ -43,6 +57,13 @@ export class PizzasController {
   async delete(req, res, next) {
     try {
       const id = req.params.id;
+      const password = req.query.password;
+      if (password !== process.env.API_PASSWORD) {
+        return next(
+          ApiError.forbidden("You don't have permission to access the resource")
+        );
+      }
+
       await PizzasService.delete(id);
       return res.json({
         messsage: `The pizza with #${id} was successfully deleted`,
