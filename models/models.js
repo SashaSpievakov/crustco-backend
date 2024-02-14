@@ -20,101 +20,98 @@ export default mongoose.model("Pizza", PizzaSchema);
  * @openapi
  * components:
  *  schemas:
- *    CreateOrderInput:
+ *    CreatePizzaInput:
  *      type: object
  *      required:
- *        - customerEmail
- *        - orderedProducts
- *        - totalItems
- *        - totalPrice
- *        - totalWeight
- *      properties:
- *        customerEmail:
- *          type: string
- *          default: example@gmail.com
- *        orderedProducts:
- *          type: string
- *          default: Some products
- *        totalItems:
- *          type: number
- *          default: 5
- *        totalPrice:
- *          type: string
- *          default: $CAD 2.38
- *        totalWeight:
- *          type: string
- *          default: 0.28 lbs
- *        customerName:
- *          type: string
- *          default: John Smith
- *        companyName:
- *          type: string
- *          default: Select Salt
- *        address:
- *          type: string
- *          default: North York, ON M3A 1T3, Canada
- *        additionalNotes:
- *          type: string
- *          default: Additional notes
- *
- *    CreateOrderResponse:
- *      type: object
+ *        - id
+ *        - name
+ *        - description
+ *        - price
+ *        - category
+ *        - rating
+ *        - types
+ *        - sizes
  *      properties:
  *        id:
- *          type: number
- *        customerEmail:
  *          type: string
- *        orderedProducts:
+ *          example: 10
+ *        name:
  *          type: string
- *        totalItems:
- *          type: number
- *        totalPrice:
+ *          example: Pizza Pepperoni
+ *        description:
  *          type: string
- *        totalWeight:
+ *          example: Some product description...
+ *        price:
+ *          type: integer
+ *          example: 13
+ *        category:
+ *          type: integer
+ *          example: 1
+ *        rating:
+ *          type: integer
+ *          example: 14
+ *        types:
+ *          type: array
+ *          items:
+ *            type: integer
+ *          example: [1, 2]
+ *        sizes:
+ *          type: array
+ *          items:
+ *            type: integer
+ *          example: [12, 16]
+ *
+ *    CreatePizzaResponse:
+ *      type: object
+ *      properties:
+ *        _id:
  *          type: string
- *        customerName:
+ *        id:
  *          type: string
- *        companyName:
+ *        name:
  *          type: string
- *        address:
+ *        description:
  *          type: string
- *        additionalNotes:
- *          type: string
+ *        price:
+ *          type: integer
+ *        category:
+ *          type: integer
+ *        rating:
+ *          type: integer
+ *        types:
+ *          type: array
+ *        sizes:
+ *          type: array
  *        createdAt:
  *          type: string
  *        updatedAt:
  *          type: string
  *
- *    UpdateOrderInput:
+ *    UpdatePizzaInput:
  *      type: object
  *      properties:
- *        customerEmail:
+ *        id:
  *          type: string
- *          default: example@gmail.com
- *        orderedProducts:
+ *          example: 14
+ *        name:
  *          type: string
- *          default: Some products
- *        totalItems:
+ *          example: Cheese Pizza
+ *        description:
  *          type: number
- *          default: 5
- *        totalPrice:
- *          type: string
- *          default: $CAD 2.38
- *        totalWeight:
- *          type: string
- *          default: 0.28 lbs
- *        customerName:
- *          type: string
- *          default: John Smith
- *        companyName:
- *          type: string
- *          default: Select Salt
- *        address:
- *          type: string
- *          default: North York, ON M3A 1T3, Canada
- *        additionalNotes:
- *          type: string
- *          default: Additional notes
+ *          example: Some new description....
+ *        price:
+ *          type: integer
+ *          example: 14
+ *        category:
+ *          type: integer
+ *          example: 2
+ *        rating:
+ *          type: integer
+ *          example: 19
+ *        types:
+ *          type: array
+ *        sizes:
+ *          type: array
  *
  *    DeleteResponse:
  *      type: object

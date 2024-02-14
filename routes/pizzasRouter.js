@@ -6,11 +6,11 @@ const pizzasController = new PizzasController();
 
 /**
  * @swagger
- * '/api/orders':
+ * '/api/pizzas':
  *  get:
  *     tags:
- *     - Orders
- *     summary: Get all orders
+ *     - Pizzas
+ *     summary: Get all pizzas
  *     parameters:
  *       - name: password
  *         in: query
@@ -23,7 +23,7 @@ const pizzasController = new PizzasController();
  *        content:
  *          application/json:
  *            schema:
- *              $ref: '#/components/schemas/CreateOrderResponse'
+ *              $ref: '#/components/schemas/CreatePizzaResponse'
  *      400:
  *        description: Bad request
  *      403:
@@ -39,24 +39,24 @@ pizzasRouter.get("/", pizzasController.getAll);
 
 /**
  * @swagger
- * '/api/orders':
+ * '/api/pizzas':
  *  post:
  *     tags:
- *     - Orders
- *     summary: Create an order
+ *     - Pizzas
+ *     summary: Create a pizza
  *     requestBody:
  *      required: true
  *      content:
  *        application/json:
  *           schema:
- *              $ref: '#/components/schemas/CreateOrderInput'
+ *              $ref: '#/components/schemas/CreatePizzaInput'
  *     responses:
  *      200:
  *        description: Success
  *        content:
  *          application/json:
  *            schema:
- *              $ref: '#/components/schemas/CreateOrderResponse'
+ *              $ref: '#/components/schemas/CreatePizzaResponse'
  *      400:
  *        description: Bad request
  *      500:
@@ -68,11 +68,11 @@ pizzasRouter.get("/:id", pizzasController.getOne);
 
 /**
  * @swagger
- * '/api/orders/{id}':
+ * '/api/pizzas/{id}':
  *  put:
  *     tags:
- *     - Orders
- *     summary: Update an order
+ *     - Pizzas
+ *     summary: Update a pizza
  *     parameters:
  *       - name: id
  *         in: path
@@ -89,14 +89,14 @@ pizzasRouter.get("/:id", pizzasController.getOne);
  *      content:
  *        application/json:
  *           schema:
- *              $ref: '#/components/schemas/UpdateOrderInput'
+ *              $ref: '#/components/schemas/UpdatePizzaInput'
  *     responses:
  *      200:
  *        description: Success
  *        content:
  *          application/json:
  *            schema:
- *              $ref: '#/components/schemas/CreateOrderResponse'
+ *              $ref: '#/components/schemas/CreatePizzaResponse'
  *      400:
  *        description: Bad request
  *      403:
@@ -112,11 +112,11 @@ pizzasRouter.put("/:id", pizzasController.update);
 
 /**
  * @swagger
- * '/api/orders/{id}':
+ * '/api/pizzas/{id}':
  *  delete:
  *     tags:
- *     - Orders
- *     summary: Delete an order
+ *     - Pizzas
+ *     summary: Delete a pizza
  *     parameters:
  *       - name: id
  *         in: path
