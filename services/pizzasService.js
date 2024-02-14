@@ -1,8 +1,12 @@
 import PizzaModel from "../models/models.js";
 
 class PizzasServices {
-  async getAll() {
-    const pizzas = await PizzaModel.find();
+  async getAll(category) {
+    let dbQuery = {};
+    if (category !== undefined) {
+      dbQuery.category = category;
+    }
+    const pizzas = await PizzaModel.find(dbQuery);
     return pizzas;
   }
 

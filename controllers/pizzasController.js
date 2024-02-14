@@ -4,7 +4,8 @@ import { PizzasService } from "../services/pizzasService.js";
 export class PizzasController {
   async getAll(req, res, next) {
     try {
-      const pizzas = await PizzasService.getAll();
+      const category = req.query.category;
+      const pizzas = await PizzasService.getAll(category);
       return res.json(pizzas);
     } catch (err) {
       return next(ApiError.internal(err));

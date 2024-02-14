@@ -12,11 +12,11 @@ const pizzasController = new PizzasController();
  *     - Pizzas
  *     summary: Get all pizzas
  *     parameters:
- *       - name: password
+ *       - name: category
  *         in: query
- *         required: true
+ *         required: false
  *         type: string
- *         description: The access password.
+ *         description: Category filter.
  *     responses:
  *      200:
  *        description: Success
