@@ -70,6 +70,31 @@ pizzasRouter.get("/", pizzasController.getAll);
  */
 pizzasRouter.post("/", pizzasController.create);
 
+/**
+ * @swagger
+ * '/api/pizzas/{id}':
+ *  get:
+ *     tags:
+ *     - Pizzas
+ *     summary: Get one pizza
+ *     responses:
+ *      200:
+ *        description: Success
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/CreatePizzaResponse'
+ *      400:
+ *        description: Bad request
+ *      403:
+ *        description: Forbidden
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/DeleteResponse'
+ *      500:
+ *        description: Inernal Error
+ */
 pizzasRouter.get("/:id", pizzasController.getOne);
 
 /**
