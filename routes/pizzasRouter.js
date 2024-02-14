@@ -77,6 +77,13 @@ pizzasRouter.post("/", pizzasController.create);
  *     tags:
  *     - Pizzas
  *     summary: Get one pizza
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         type: number
+ *         minimum: 1
+ *         description: The user ID.
  *     responses:
  *      200:
  *        description: Success
