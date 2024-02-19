@@ -14,8 +14,8 @@ export class PizzasController {
 
   async getOne(req, res) {
     try {
-      const id = req.params.id;
-      const pizza = await PizzasService.getOne(id);
+      const name = req.params.name;
+      const pizza = await PizzasService.getOne(name);
       return res.json(pizza);
     } catch (err) {
       return next(ApiError.internal(err));

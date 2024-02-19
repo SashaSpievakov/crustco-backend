@@ -16,8 +16,8 @@ class PizzasServices {
     return pizzas;
   }
 
-  async getOne(id) {
-    const pizza = await PizzaModel.findOne({ id: id });
+  async getOne(name) {
+    const pizza = await PizzaModel.findOne({ name: name });
     return pizza;
   }
 

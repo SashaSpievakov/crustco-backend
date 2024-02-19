@@ -77,18 +77,18 @@ pizzasRouter.post("/", pizzasController.create);
 
 /**
  * @swagger
- * '/api/pizzas/{id}':
+ * '/api/pizzas/{name}':
  *  get:
  *     tags:
  *     - Pizzas
  *     summary: Get one pizza
  *     parameters:
- *       - name: id
+ *       - name: name
  *         in: path
  *         required: true
  *         type: number
  *         minimum: 1
- *         description: The user ID.
+ *         description: Pizza's name.
  *     responses:
  *      200:
  *        description: Success
@@ -107,7 +107,7 @@ pizzasRouter.post("/", pizzasController.create);
  *      500:
  *        description: Inernal Error
  */
-pizzasRouter.get("/:id", pizzasController.getOne);
+pizzasRouter.get("/:name", pizzasController.getOne);
 
 /**
  * @swagger
@@ -122,7 +122,7 @@ pizzasRouter.get("/:id", pizzasController.getOne);
  *         required: true
  *         type: number
  *         minimum: 1
- *         description: The user ID.
+ *         description: Pizza's ID.
  *       - name: password
  *         in: query
  *         required: true
@@ -166,7 +166,7 @@ pizzasRouter.put("/:id", pizzasController.update);
  *         required: true
  *         type: number
  *         minimum: 1
- *         description: The user ID.
+ *         description: Pizza's ID.
  *       - name: password
  *         in: query
  *         required: true
