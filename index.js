@@ -15,17 +15,31 @@ app.use("/api", router);
 
 app.use(errorHandler);
 
-const start = async () => {
+const connectToDB = async () => {
   try {
     await mongoose.connect(process.env.DB_CONNECTION_STRING);
+    console.log("Database connection established");
+  } catch (error) {
+    console.error("Database connection failed:", error.message);
+    process.exit(1);
+  }
+};
 
+const startServer = () => {
+  try {
     app.listen(PORT, () => {
       swaggerDocs(app, PORT);
-      console.log(`server has started on http://localhost:${PORT}/`);
+      console.log(`Server has started on http://localhost:${PORT}/`);
     });
   } catch (error) {
-    console.log(error);
+    console.error("Failed to start the server:", error.message);
+    process.exit(1);
   }
+};
+
+const start = async () => {
+  await connectToDB();
+  startServer();
 };
 
 start();
