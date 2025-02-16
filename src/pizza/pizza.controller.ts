@@ -1,17 +1,14 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Param,
   Body,
-  Query,
+  Controller,
+  Delete,
+  Get,
   Logger,
+  Param,
+  Patch,
+  Post,
+  Query,
 } from '@nestjs/common';
-import { PizzaService } from './pizza.service';
-import { CreatePizzaDto } from './dto/create-pizza.dto';
-import { UpdatePizzaDto } from './dto/update-pizza.dto';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import {
   ApiBody,
@@ -20,12 +17,17 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+
 import { CreateErrorResponseDto } from 'src/common/dto/create-error.dto';
 import { GeneralErrorResponseDto } from 'src/common/dto/general-error.dto';
-import { isMongooseException } from 'src/common/utils/mongoose.utils';
 import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
-import { PizzaResponseDto } from './dto/response-pizza.dto';
+import { isMongooseException } from 'src/common/utils/mongoose.utils';
+
+import { CreatePizzaDto } from './dto/create-pizza.dto';
 import { DeletePizzaResponseDto } from './dto/delete-pizza.dto';
+import { PizzaResponseDto } from './dto/response-pizza.dto';
+import { UpdatePizzaDto } from './dto/update-pizza.dto';
+import { PizzaService } from './pizza.service';
 
 @ApiTags('Pizza')
 @Controller('pizza')

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsArray, IsNotEmpty } from 'class-validator';
+import { IsArray, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class CreatePizzaDto {
   @ApiProperty({ example: '10', description: 'Unique ID of the pizza' })

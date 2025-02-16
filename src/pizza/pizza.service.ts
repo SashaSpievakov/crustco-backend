@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Pizza, PizzaDocument } from './pizza.schema';
+
 import { CreatePizzaDto } from './dto/create-pizza.dto';
 import { UpdatePizzaDto } from './dto/update-pizza.dto';
+import { Pizza, PizzaDocument } from './pizza.schema';
 
 @Injectable()
 export class PizzaService {
