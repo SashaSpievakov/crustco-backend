@@ -7,12 +7,25 @@ import {
   Param,
   Body,
   Query,
+  Logger,
 } from '@nestjs/common';
 import { PizzaService } from './pizza.service';
 import { CreatePizzaDto } from './dto/create-pizza.dto';
 import { UpdatePizzaDto } from './dto/update-pizza.dto';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { CreateErrorResponseDto } from 'src/common/dto/create-error.dto';
+import { GeneralErrorResponseDto } from 'src/common/dto/general-error.dto';
+import { isMongooseException } from 'src/common/utils/mongoose.utils';
+import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
+import { PizzaResponseDto } from './dto/response-pizza.dto';
+import { DeletePizzaResponseDto } from './dto/delete-pizza.dto';
 
 @ApiTags('Pizza')
 @Controller('pizza')
@@ -20,7 +33,16 @@ export class PizzaController {
   constructor(private readonly pizzaService: PizzaService) {}
 
   @ApiOperation({ summary: 'Get all pizzas' })
-  @ApiResponse({ status: 200, description: 'List of all pizzas' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of all pizzas',
+    type: [PizzaResponseDto],
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+    type: GeneralErrorResponseDto,
+  })
   @ApiQuery({ name: 'category', required: false, example: 1 })
   @ApiQuery({ name: 'sortBy', required: false, example: 'price,asc' })
   @Get()
@@ -39,15 +61,20 @@ export class PizzaController {
   }
 
   @ApiOperation({ summary: 'Get a pizza by name' })
-  @ApiResponse({ status: 200, description: 'Pizza details' })
-  @ApiResponse({ status: 404, description: 'Pizza not found' })
+  @ApiResponse({
+    status: 200,
+    description: 'Pizza details',
+    type: PizzaResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Pizza not found',
+    type: GeneralUserErrorResponseDto,
+  })
   @Get(':name')
   async getOne(@Param('name') name: string) {
     try {
       const pizza = await this.pizzaService.getOne(name);
-      if (!pizza) {
-        throw new HttpException('Pizza not found', HttpStatus.NOT_FOUND);
-      }
       return pizza;
     } catch (err) {
       const errorMessage =
@@ -57,8 +84,17 @@ export class PizzaController {
   }
 
   @ApiOperation({ summary: 'Create a new pizza' })
-  @ApiResponse({ status: 201, description: 'Pizza created successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid input' })
+  @ApiBody({ type: CreatePizzaDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Pizza created successfully',
+    type: PizzaResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input',
+    type: CreateErrorResponseDto,
+  })
   @Post()
   async create(
     @Body() createPizzaDto: CreatePizzaDto,
@@ -75,14 +111,36 @@ export class PizzaController {
       const pizza = await this.pizzaService.create(createPizzaDto);
       return pizza;
     } catch (err) {
+      if (isMongooseException(err)) {
+        if (err.code === 11000) {
+          throw new HttpException(
+            'Duplicate ID found, pizza with this ID already exists',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+
       const errorMessage = err instanceof Error ? err.message : 'Bad Request';
-      throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
+      Logger.error(errorMessage, 'PizzaController');
+      throw new HttpException(
+        'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   @ApiOperation({ summary: 'Update a pizza' })
-  @ApiResponse({ status: 200, description: 'Pizza updated successfully' })
-  @ApiResponse({ status: 404, description: 'Pizza not found' })
+  @ApiBody({ type: UpdatePizzaDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Pizza updated successfully',
+    type: PizzaResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input',
+    type: CreateErrorResponseDto,
+  })
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -98,19 +156,34 @@ export class PizzaController {
       }
 
       const updatedPizza = await this.pizzaService.update(id, updatePizzaDto);
-      if (!updatedPizza) {
-        throw new HttpException('Pizza not found', HttpStatus.NOT_FOUND);
-      }
       return updatedPizza;
     } catch (err) {
+      if (err instanceof Error) {
+        if (err.message.includes('not found')) {
+          throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
+        }
+      }
+
       const errorMessage = err instanceof Error ? err.message : 'Bad Request';
-      throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
+      Logger.error(errorMessage, 'PizzaController');
+      throw new HttpException(
+        'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   @ApiOperation({ summary: 'Delete a pizza' })
-  @ApiResponse({ status: 200, description: 'Pizza deleted successfully' })
-  @ApiResponse({ status: 404, description: 'Pizza not found' })
+  @ApiResponse({
+    status: 200,
+    description: 'Pizza deleted successfully',
+    type: DeletePizzaResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Pizza not found',
+    type: GeneralUserErrorResponseDto,
+  })
   @Delete(':id')
   async delete(@Param('id') id: string, @Query('password') password: string) {
     try {
@@ -126,8 +199,18 @@ export class PizzaController {
         message: `The pizza with #${id} was successfully deleted`,
       };
     } catch (err) {
+      if (err instanceof Error) {
+        if (err.message.includes('not found')) {
+          throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
+        }
+      }
+
       const errorMessage = err instanceof Error ? err.message : 'Bad Request';
-      throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
+      Logger.error(errorMessage, 'PizzaController');
+      throw new HttpException(
+        'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 }

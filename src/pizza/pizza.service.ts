@@ -44,7 +44,7 @@ export class PizzaService {
 
   async update(id: string, updatePizzaDto: UpdatePizzaDto) {
     const updatedPizza = await this.pizzaModel
-      .findByIdAndUpdate(id, updatePizzaDto, { new: true })
+      .findOneAndUpdate({ id }, updatePizzaDto, { new: true })
       .exec();
 
     if (!updatedPizza) {
