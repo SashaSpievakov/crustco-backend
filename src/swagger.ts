@@ -1,7 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import {
+  OperationObject,
+  PathItemObject,
+} from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 
 export function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
@@ -24,7 +26,7 @@ export function setupSwagger(app: INestApplication) {
     const pathItem = document.paths[path];
 
     Object.keys(pathItem).forEach((method) => {
-      const route = pathItem[method];
+      const route = pathItem[method as keyof PathItemObject] as OperationObject;
 
       route.responses = route.responses || {};
 
