@@ -8,9 +8,7 @@ import { Pizza, PizzaDocument } from './pizza.schema';
 
 @Injectable()
 export class PizzaService {
-  constructor(
-    @InjectModel(Pizza.name) private readonly pizzaModel: Model<PizzaDocument>,
-  ) {}
+  constructor(@InjectModel(Pizza.name) private readonly pizzaModel: Model<PizzaDocument>) {}
 
   async getAll(category?: number, sortBy?: string) {
     const dbQuery: Record<string, any> = {};

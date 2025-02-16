@@ -6,9 +6,7 @@ import { Pizza, PizzaSchema } from './pizza.schema';
 import { PizzaService } from './pizza.service';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: Pizza.name, schema: PizzaSchema }]),
-  ],
+  imports: [MongooseModule.forFeature([{ name: Pizza.name, schema: PizzaSchema }])],
   providers: [PizzaService],
   controllers: [PizzaController],
 })

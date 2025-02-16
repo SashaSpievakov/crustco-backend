@@ -1,22 +1,6 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Logger,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, Query } from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import {
-  ApiBody,
-  ApiOperation,
-  ApiQuery,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { CreateErrorResponseDto } from 'src/common/dto/create-error.dto';
 import { GeneralErrorResponseDto } from 'src/common/dto/general-error.dto';
@@ -48,16 +32,12 @@ export class PizzaController {
   @ApiQuery({ name: 'category', required: false, example: 1 })
   @ApiQuery({ name: 'sortBy', required: false, example: 'price,asc' })
   @Get()
-  async getAll(
-    @Query('category') category: number,
-    @Query('sortBy') sortBy: string,
-  ) {
+  async getAll(@Query('category') category: number, @Query('sortBy') sortBy: string) {
     try {
       const pizzas = await this.pizzaService.getAll(category, sortBy);
       return pizzas;
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Internal Server Error';
+      const errorMessage = err instanceof Error ? err.message : 'Internal Server Error';
       throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
     }
   }
@@ -79,8 +59,7 @@ export class PizzaController {
       const pizza = await this.pizzaService.getOne(name);
       return pizza;
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Internal Server Error';
+      const errorMessage = err instanceof Error ? err.message : 'Internal Server Error';
       throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
     }
   }
@@ -98,16 +77,10 @@ export class PizzaController {
     type: CreateErrorResponseDto,
   })
   @Post()
-  async create(
-    @Body() createPizzaDto: CreatePizzaDto,
-    @Query('password') password: string,
-  ) {
+  async create(@Body() createPizzaDto: CreatePizzaDto, @Query('password') password: string) {
     try {
       if (password !== process.env.API_PASSWORD) {
-        throw new HttpException(
-          'Forbidden: No permission to create pizza',
-          HttpStatus.FORBIDDEN,
-        );
+        throw new HttpException('Forbidden: No permission to create pizza', HttpStatus.FORBIDDEN);
       }
 
       const pizza = await this.pizzaService.create(createPizzaDto);
@@ -124,10 +97,7 @@ export class PizzaController {
 
       const errorMessage = err instanceof Error ? err.message : 'Bad Request';
       Logger.error(errorMessage, 'PizzaController');
-      throw new HttpException(
-        'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -151,10 +121,7 @@ export class PizzaController {
   ) {
     try {
       if (password !== process.env.API_PASSWORD) {
-        throw new HttpException(
-          'Forbidden: No permission to update pizza',
-          HttpStatus.FORBIDDEN,
-        );
+        throw new HttpException('Forbidden: No permission to update pizza', HttpStatus.FORBIDDEN);
       }
 
       const updatedPizza = await this.pizzaService.update(id, updatePizzaDto);
@@ -168,10 +135,7 @@ export class PizzaController {
 
       const errorMessage = err instanceof Error ? err.message : 'Bad Request';
       Logger.error(errorMessage, 'PizzaController');
-      throw new HttpException(
-        'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -190,10 +154,7 @@ export class PizzaController {
   async delete(@Param('id') id: string, @Query('password') password: string) {
     try {
       if (password !== process.env.API_PASSWORD) {
-        throw new HttpException(
-          'Forbidden: No permission to delete pizza',
-          HttpStatus.FORBIDDEN,
-        );
+        throw new HttpException('Forbidden: No permission to delete pizza', HttpStatus.FORBIDDEN);
       }
 
       await this.pizzaService.delete(id);
@@ -209,10 +170,7 @@ export class PizzaController {
 
       const errorMessage = err instanceof Error ? err.message : 'Bad Request';
       Logger.error(errorMessage, 'PizzaController');
-      throw new HttpException(
-        'Internal server error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
