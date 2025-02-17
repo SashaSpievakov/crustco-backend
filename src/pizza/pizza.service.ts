@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 
 import { CreatePizzaDto } from './dto/create-pizza.dto';
 import { UpdatePizzaDto } from './dto/update-pizza.dto';
-import { Pizza, PizzaDocument } from './pizza.schema';
+import { Pizza, PizzaDocument } from './schemas/pizza.schema';
 
 @Injectable()
 export class PizzaService {

@@ -5,8 +5,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from 'mongoose';
 
 import { UpdatePizzaDto } from './dto/update-pizza.dto';
-import { Pizza, PizzaDocument } from './pizza.schema';
 import { PizzaService } from './pizza.service';
+import { Pizza, PizzaDocument } from './schemas/pizza.schema';
 
 const mockPizza = {
   id: '1',
