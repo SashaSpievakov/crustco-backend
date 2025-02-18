@@ -14,7 +14,7 @@ export class UserService {
   }
 
   async create(email: string, password: string): Promise<User> {
-    const verificationCode = crypto.randomBytes(3).toString('hex'); // Generate a 6-character verification code
+    const verificationCode = crypto.randomBytes(3).toString('hex');
     const verificationCodeExpiresAt = new Date();
     verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 5);
 
@@ -28,7 +28,6 @@ export class UserService {
       verificationCodeExpiresAt,
     });
 
-    // Send verification email here (you'll need to implement this)
     this.sendVerificationEmail(email, verificationCode);
 
     return newUser.save();
@@ -37,22 +36,21 @@ export class UserService {
   async verifyEmail(email: string, code: string): Promise<User | null> {
     const user = await this.userModel.findOne({ email }).exec();
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new BadRequestException('Invalid or expired verification code');
     }
 
     if (user.verificationCode !== code) {
-      throw new BadRequestException('Invalid verification code');
+      throw new BadRequestException('Invalid or expired verification code');
     }
 
     const currentTime = new Date();
-    console.log(currentTime, user.verificationCodeExpiresAt);
     if (user.verificationCodeExpiresAt && currentTime > user.verificationCodeExpiresAt) {
-      throw new BadRequestException('Verification code has expired');
+      throw new BadRequestException('Invalid or expired verification code');
     }
 
     user.emailVerified = true;
-    user.verificationCode = ''; // Clear verification code after success
-    user.verificationCodeExpiresAt = null; // Clear the expiration date
+    user.verificationCode = '';
+    user.verificationCodeExpiresAt = null;
     await user.save();
 
     return user;
@@ -62,6 +60,5 @@ export class UserService {
     // Implement the logic for sending the verification email.
     // You can use Nodemailer, SendGrid, SES, etc.
     console.log(`Sending verification email to ${email} with code: ${verificationCode}`);
-    // Here, you'll send an email to the user with the verification code.
   }
 }
