@@ -1,7 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { Model } from 'mongoose';
+
+import { hashEmail } from 'src/common/utils/hashEmail.utils';
 
 import { User, UserDocument } from './schemas/user.schema';
 
@@ -10,31 +13,41 @@ export class UserService {
   constructor(@InjectModel(User.name) private readonly userModel: Model<UserDocument>) {}
 
   async findOne(email: string): Promise<User | null> {
-    return this.userModel.findOne({ email }).exec();
+    const hashedEmail = hashEmail(email);
+    return this.userModel.findOne({ email: hashedEmail }).exec();
   }
 
-  async create(email: string, password: string): Promise<User> {
-    const verificationCode = crypto.randomBytes(3).toString('hex');
-    const verificationCodeExpiresAt = new Date();
-    verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 5);
+  async create(email: string, password: string): Promise<User | void> {
+    const existingUser = await this.findOne(email);
 
-    const newUser = new this.userModel({
-      email,
-      password,
-      role: ['user'],
-      emailVerified: false,
-      verified: false,
-      verificationCode,
-      verificationCodeExpiresAt,
-    });
+    if (existingUser) {
+      const verificationCode = crypto.randomBytes(3).toString('hex');
+      const verificationCodeExpiresAt = new Date();
+      verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 5);
 
-    this.sendVerificationEmail(email, verificationCode);
+      const hashedEmail = hashEmail(email);
+      const hashedPassword = await bcrypt.hash(password, 12);
 
-    return newUser.save();
+      const newUser = new this.userModel({
+        email: hashedEmail,
+        password: hashedPassword,
+        role: ['user'],
+        emailVerified: false,
+        verified: false,
+        verificationCode,
+        verificationCodeExpiresAt,
+      });
+
+      this.sendVerificationEmail(email, verificationCode);
+
+      return newUser.save();
+    }
   }
 
-  async verifyEmail(email: string, code: string): Promise<User | null> {
-    const user = await this.userModel.findOne({ email }).exec();
+  async verifyEmail(email: string, code: string): Promise<User> {
+    const hashedEmail = hashEmail(email);
+    const user = await this.userModel.findOne({ email: hashedEmail }).exec();
+
     if (!user) {
       throw new BadRequestException('Invalid or expired verification code');
     }
