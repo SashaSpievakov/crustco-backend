@@ -2,7 +2,7 @@ import { Config } from 'jest';
 
 const config: Config = {
   moduleFileExtensions: ['js', 'json', 'ts'],
-  rootDir: '../', // Set rootDir to project root (assuming tests are inside the /tests folder)
+  rootDir: '../',
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/src/$1',
   },
