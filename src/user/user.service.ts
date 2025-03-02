@@ -12,22 +12,36 @@ import { User, UserDocument } from './schemas/user.schema';
 export class UserService {
   constructor(@InjectModel(User.name) private readonly userModel: Model<UserDocument>) {}
 
-  async findOne(email: string): Promise<User | null> {
+  async findOne(email: string): Promise<UserDocument | null> {
     const hashedEmail = hashEmail(email);
     return this.userModel.findOne({ email: hashedEmail }).exec();
+  }
+
+  async findOneById(id: string): Promise<UserDocument | null> {
+    return this.userModel.findById(id).exec();
   }
 
   async create(email: string, password: string): Promise<User | void> {
     const existingUser = await this.findOne(email);
 
+    const verificationCode = crypto.randomBytes(3).toString('hex');
+    const verificationCodeExpiresAt = new Date();
+    verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 5);
+
+    const hashedEmail = hashEmail(email);
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     if (existingUser) {
-      const verificationCode = crypto.randomBytes(3).toString('hex');
-      const verificationCodeExpiresAt = new Date();
-      verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 5);
+      if (!existingUser.verified) {
+        existingUser.password = hashedPassword;
+        existingUser.verificationCode = verificationCode;
+        existingUser.verificationCodeExpiresAt = verificationCodeExpiresAt;
 
-      const hashedEmail = hashEmail(email);
-      const hashedPassword = await bcrypt.hash(password, 12);
+        this.sendVerificationEmail(email, verificationCode);
 
+        return existingUser.save();
+      }
+    } else {
       const newUser = new this.userModel({
         email: hashedEmail,
         password: hashedPassword,
@@ -69,7 +83,7 @@ export class UserService {
     return user;
   }
 
-  private sendVerificationEmail(email: string, verificationCode: string) {
+  private sendVerificationEmail(email: string, verificationCode: string): void {
     // Implement the logic for sending the verification email.
     // You can use Nodemailer, SendGrid, SES, etc.
     console.log(`Sending verification email to ${email} with code: ${verificationCode}`);

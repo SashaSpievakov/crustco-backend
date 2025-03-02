@@ -10,6 +10,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBody } from '@nestjs/swagger';
 
 import { AuthGuard } from 'src/common/guards/auth.guard';
 
@@ -23,22 +24,14 @@ export interface IRequest {
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  // @HttpCode(HttpStatus.OK)
-  // @Post('login')
-  // signIn(@Body() signInDto: Record<string, any>) {
-  //   return this.authService.login(signInDto.email, signInDto.password);
-  // }
-
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() body: { email: string; password: string }) {
     const user = await this.authService.validateUser(body.email, body.password);
-    if (!user) {
-      throw new Error('Invalid credentials');
-    }
     return this.authService.login(user);
   }
 
+  @ApiBody({})
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() body: { email: string; password: string }) {
@@ -53,6 +46,7 @@ export class AuthController {
     }
   }
 
+  @ApiBody({})
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   async verifyEmail(@Body() body: { email: string; code: string }) {
