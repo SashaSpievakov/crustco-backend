@@ -1,4 +1,5 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
 
@@ -12,30 +13,24 @@ export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
-  async validateUser(email: string, password: string) {
+  async validateUser(email: string, password: string): Promise<User> {
     const user = await this.userService.findOne(email);
+
     if (user && (await bcrypt.compare(password, user.password)) && user.emailVerified) {
       return user;
     }
-    throw new UnauthorizedException('Invalid credentials or email not verified');
+
+    throw new UnauthorizedException('Authentication failed. Please check your credentials.');
   }
 
   async register(email: string, password: string): Promise<{ message: string }> {
-    const existingUser = await this.userService.findOne(email);
-    if (existingUser) {
-      throw new ConflictException('User already exists');
-    }
-
-    // Hash the password before saving the user
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create the new user
-    await this.userService.create(email, hashedPassword);
+    await this.userService.create(email, password);
 
     return {
-      message: 'Registration successful, please check your email for the verification code.',
+      message: 'If this email is not registered, you will receive a verification email shortly.',
     };
   }
 
@@ -44,20 +39,17 @@ export class AuthService {
     code: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const user = await this.userService.verifyEmail(email, code);
-    if (!user) {
-      throw new UnauthorizedException('Invalid verification code');
-    }
 
-    const payload: JwtPayload = { email: user.email, sub: user._id.toString() };
+    const payload: JwtPayload = { sub: user._id.toString() };
 
     const accessToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET,
-      expiresIn: '5m', // Access token expires in 5 minutes
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn: '5m',
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET,
-      expiresIn: '30d', // Refresh token expires in 30 days
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: '30d',
     });
 
     return {
@@ -66,45 +58,44 @@ export class AuthService {
     };
   }
 
-  login(user: User) {
-    const payload: JwtPayload = { email: user.email, sub: user._id.toString() };
+  login(user: User): { accessToken: string; refreshToken: string } {
+    const payload: JwtPayload = { sub: user._id.toString() };
 
     const accessToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET,
-      expiresIn: '5m', // Access token expires in 1 hour
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn: '5m',
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET, // Define a separate secret for refresh tokens
-      expiresIn: '30d', // Refresh token expires in 7 days
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: '30d',
     });
 
-    // You can store the refresh token in a database or return it to the user
     return {
       accessToken,
       refreshToken,
     };
   }
 
-  async refreshToken(refreshToken: string) {
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
     try {
       const decoded: JwtPayload = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || '',
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
-      const user = await this.userService.findOne(decoded.email);
+
+      const user = await this.userService.findOneById(decoded.sub);
       if (!user) {
-        throw new Error('User not found');
+        throw new Error();
       }
 
-      // Generate new access token using the same payload
       const newAccessToken = this.jwtService.sign(
         { email: user.email, sub: user._id.toString() },
-        { secret: process.env.JWT_SECRET, expiresIn: '5m' },
+        { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '5m' },
       );
 
       return { accessToken: newAccessToken };
     } catch {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }
   }
 }
