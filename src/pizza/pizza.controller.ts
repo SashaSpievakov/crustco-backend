@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, Query } from
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { CreateErrorResponseDto } from 'src/common/dto/create-error.dto';
+import { CreateValidationErrorResponseDto } from 'src/common/dto/create-validation-error.dto';
 import { GeneralErrorResponseDto } from 'src/common/dto/general-error.dto';
 import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
 import { isMongooseException } from 'src/common/utils/mongoose.utils';
@@ -74,7 +74,7 @@ export class PizzaController {
   @ApiResponse({
     status: 400,
     description: 'Invalid input',
-    type: CreateErrorResponseDto,
+    type: CreateValidationErrorResponseDto,
   })
   @Post()
   async create(@Body() createPizzaDto: CreatePizzaDto, @Query('password') password: string) {
@@ -111,7 +111,7 @@ export class PizzaController {
   @ApiResponse({
     status: 400,
     description: 'Invalid input',
-    type: CreateErrorResponseDto,
+    type: CreateValidationErrorResponseDto,
   })
   @Patch(':id')
   async update(
