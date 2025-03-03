@@ -4,7 +4,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from 'mongoose';
 
-import { UpdatePizzaDto } from './dto/update-pizza.dto';
+import { UpdatePizzaDto } from './dto/pizza-update.dto';
 import { PizzaService } from './pizza.service';
 import { Pizza, PizzaDocument } from './schemas/pizza.schema';
 

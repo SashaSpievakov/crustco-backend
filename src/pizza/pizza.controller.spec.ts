@@ -1,10 +1,10 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { CreatePizzaDto } from './dto/create-pizza.dto';
 import { DeletePizzaResponseDto } from './dto/delete-pizza.dto';
-import { PizzaResponseDto } from './dto/response-pizza.dto';
-import { UpdatePizzaDto } from './dto/update-pizza.dto';
+import { CreatePizzaDto } from './dto/pizza-create.dto';
+import { PizzaResponseDto } from './dto/pizza-response.dto';
+import { UpdatePizzaDto } from './dto/pizza-update.dto';
 import { PizzaController } from './pizza.controller';
 import { PizzaService } from './pizza.service';
 

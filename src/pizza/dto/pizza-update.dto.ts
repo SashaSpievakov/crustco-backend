@@ -2,9 +2,9 @@ import { PartialType } from '@nestjs/mapped-types';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
-import { CreatePizzaDto } from './create-pizza.dto';
+import { PizzaCreateDto } from './pizza-create.dto';
 
-export class UpdatePizzaDto extends PartialType(CreatePizzaDto) {
+export class PizzaUpdateDto extends PartialType(PizzaCreateDto) {
   @ApiProperty({
     example: '10',
     description: 'Unique ID of the pizza',

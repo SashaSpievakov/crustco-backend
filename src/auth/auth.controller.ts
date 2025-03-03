@@ -12,13 +12,14 @@ import {
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Response } from 'express';
 
-import { CreateValidationErrorResponseDto } from 'src/common/dto/create-validation-error.dto';
+import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
+import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
+import { AuthenticateInputDto } from './dto/authenticate-input.dto';
 import { LoginFailedDto } from './dto/login-failed.dto';
-import { LoginSuccessDto } from './dto/login-success.dto';
+import { VerificationInputDto } from './dto/verification-input.dto';
 
 // Delete me
 export interface IRequest {
@@ -30,16 +31,16 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @ApiOperation({ summary: 'Log in into your account' })
-  @ApiBody({ type: LoginDto })
+  @ApiBody({ type: AuthenticateInputDto })
   @ApiResponse({
     status: 200,
     description: 'Logged in successfully',
-    type: LoginSuccessDto,
+    type: RequestSuccessDto,
   })
   @ApiResponse({
     status: 400,
     description: 'Invalid input',
-    type: CreateValidationErrorResponseDto,
+    type: ValidationErrorResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -48,28 +49,59 @@ export class AuthController {
   })
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: LoginDto, @Res() res: Response) {
-    const user = await this.authService.validateUser(loginDto.email, loginDto.password);
+  async login(
+    @Body() loginBody: AuthenticateInputDto,
+    @Res() res: Response,
+  ): Promise<RequestSuccessDto | void> {
+    const user = await this.authService.validateUser(loginBody.email, loginBody.password);
     return this.authService.login(user, res);
   }
 
-  @ApiBody({})
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiBody({ type: AuthenticateInputDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Registration requested',
+    type: RequestSuccessDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input',
+    type: ValidationErrorResponseDto,
+  })
   @Post('register')
-  async register(@Body() body: { email: string; password: string }) {
-    const { email, password } = body;
-    return await this.authService.register(email, password);
+  async register(@Body() registerBody: AuthenticateInputDto): Promise<RequestSuccessDto> {
+    return await this.authService.register(registerBody.email, registerBody.password);
   }
 
-  @ApiBody({})
+  @ApiOperation({ summary: "Vefify user's email" })
+  @ApiBody({ type: VerificationInputDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Verification is successful',
+    type: RequestSuccessDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input',
+    type: ValidationErrorResponseDto,
+  })
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
-  async verifyEmail(@Body() body: { email: string; code: string }, @Res() res: Response) {
-    return await this.authService.verifyEmail(body.email, body.code, res);
+  async verifyEmail(
+    @Body() verificationBody: VerificationInputDto,
+    @Res() res: Response,
+  ): Promise<RequestSuccessDto | void> {
+    const { email, code } = verificationBody;
+    return await this.authService.verifyEmail(email, code, res);
   }
 
   @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
-  async refreshToken(@Body() body: { refreshToken: string }, @Res() res: Response) {
+  async refreshToken(
+    @Body() body: { refreshToken: string },
+    @Res() res: Response,
+  ): Promise<RequestSuccessDto | void> {
     return this.authService.refreshToken(body.refreshToken, res);
   }
 

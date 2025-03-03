@@ -2,16 +2,17 @@ import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, Query } from
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { CreateValidationErrorResponseDto } from 'src/common/dto/create-validation-error.dto';
-import { GeneralErrorResponseDto } from 'src/common/dto/general-error.dto';
 import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
+import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
+import { ServerErrorResponseDto } from 'src/common/dto/server-error.dto';
+import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
 import { isMongooseException } from 'src/common/utils/mongoose.utils';
 
-import { CreatePizzaDto } from './dto/create-pizza.dto';
-import { DeletePizzaResponseDto } from './dto/delete-pizza.dto';
-import { PizzaResponseDto } from './dto/response-pizza.dto';
-import { UpdatePizzaDto } from './dto/update-pizza.dto';
+import { PizzaCreateDto } from './dto/pizza-create.dto';
+import { PizzaResponseDto } from './dto/pizza-response.dto';
+import { PizzaUpdateDto } from './dto/pizza-update.dto';
 import { PizzaService } from './pizza.service';
+import { Pizza } from './schemas/pizza.schema';
 
 @ApiTags('Pizza')
 @Controller('pizza')
@@ -27,12 +28,15 @@ export class PizzaController {
   @ApiResponse({
     status: 500,
     description: 'Internal server error',
-    type: GeneralErrorResponseDto,
+    type: ServerErrorResponseDto,
   })
   @ApiQuery({ name: 'category', required: false, example: 1 })
   @ApiQuery({ name: 'sortBy', required: false, example: 'price,asc' })
   @Get()
-  async getAll(@Query('category') category: number, @Query('sortBy') sortBy: string) {
+  async getAll(
+    @Query('category') category: number,
+    @Query('sortBy') sortBy: string,
+  ): Promise<Pizza[]> {
     try {
       const pizzas = await this.pizzaService.getAll(category, sortBy);
       return pizzas;
@@ -54,7 +58,7 @@ export class PizzaController {
     type: GeneralUserErrorResponseDto,
   })
   @Get(':name')
-  async getOne(@Param('name') name: string) {
+  async getOne(@Param('name') name: string): Promise<Pizza> {
     try {
       const pizza = await this.pizzaService.getOne(name);
       return pizza;
@@ -65,7 +69,7 @@ export class PizzaController {
   }
 
   @ApiOperation({ summary: 'Create a new pizza' })
-  @ApiBody({ type: CreatePizzaDto })
+  @ApiBody({ type: PizzaCreateDto })
   @ApiResponse({
     status: 201,
     description: 'Pizza created successfully',
@@ -74,16 +78,19 @@ export class PizzaController {
   @ApiResponse({
     status: 400,
     description: 'Invalid input',
-    type: CreateValidationErrorResponseDto,
+    type: ValidationErrorResponseDto,
   })
   @Post()
-  async create(@Body() createPizzaDto: CreatePizzaDto, @Query('password') password: string) {
+  async create(
+    @Body() pizzaBody: PizzaCreateDto,
+    @Query('password') password: string,
+  ): Promise<Pizza> {
     try {
       if (password !== process.env.API_PASSWORD) {
         throw new HttpException('Forbidden: No permission to create pizza', HttpStatus.FORBIDDEN);
       }
 
-      const pizza = await this.pizzaService.create(createPizzaDto);
+      const pizza = await this.pizzaService.create(pizzaBody);
       return pizza;
     } catch (err) {
       if (isMongooseException(err)) {
@@ -102,7 +109,7 @@ export class PizzaController {
   }
 
   @ApiOperation({ summary: 'Update a pizza' })
-  @ApiBody({ type: UpdatePizzaDto })
+  @ApiBody({ type: PizzaUpdateDto })
   @ApiResponse({
     status: 200,
     description: 'Pizza updated successfully',
@@ -111,14 +118,14 @@ export class PizzaController {
   @ApiResponse({
     status: 400,
     description: 'Invalid input',
-    type: CreateValidationErrorResponseDto,
+    type: ValidationErrorResponseDto,
   })
   @Patch(':id')
   async update(
     @Param('id') id: string,
-    @Body() updatePizzaDto: UpdatePizzaDto,
+    @Body() updatePizzaDto: PizzaUpdateDto,
     @Query('password') password: string,
-  ) {
+  ): Promise<Pizza> {
     try {
       if (password !== process.env.API_PASSWORD) {
         throw new HttpException('Forbidden: No permission to update pizza', HttpStatus.FORBIDDEN);
@@ -143,7 +150,7 @@ export class PizzaController {
   @ApiResponse({
     status: 200,
     description: 'Pizza deleted successfully',
-    type: DeletePizzaResponseDto,
+    type: RequestSuccessDto,
   })
   @ApiResponse({
     status: 400,
@@ -151,7 +158,10 @@ export class PizzaController {
     type: GeneralUserErrorResponseDto,
   })
   @Delete(':id')
-  async delete(@Param('id') id: string, @Query('password') password: string) {
+  async delete(
+    @Param('id') id: string,
+    @Query('password') password: string,
+  ): Promise<RequestSuccessDto> {
     try {
       if (password !== process.env.API_PASSWORD) {
         throw new HttpException('Forbidden: No permission to delete pizza', HttpStatus.FORBIDDEN);

@@ -66,7 +66,7 @@ export class UserService {
       throw new BadRequestException('Invalid or expired verification code');
     }
 
-    if (user.verificationCode !== code) {
+    if (user.verificationCode !== code || user.emailVerified) {
       throw new BadRequestException('Invalid or expired verification code');
     }
 
