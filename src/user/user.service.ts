@@ -59,18 +59,17 @@ export class UserService {
   }
 
   async verifyEmail(email: string, code: string): Promise<User> {
-    const hashedEmail = hashEmail(email);
-    const user = await this.userModel.findOne({ email: hashedEmail }).exec();
+    const user = await this.findOne(email);
+    const currentTime = new Date();
 
     if (!user) {
       throw new BadRequestException('Invalid or expired verification code');
     }
 
-    if (user.verificationCode !== code) {
+    if (user.verificationCode !== code || user.emailVerified) {
       throw new BadRequestException('Invalid or expired verification code');
     }
 
-    const currentTime = new Date();
     if (user.verificationCodeExpiresAt && currentTime > user.verificationCodeExpiresAt) {
       throw new BadRequestException('Invalid or expired verification code');
     }

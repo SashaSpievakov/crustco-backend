@@ -1,7 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Response, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
+import { Response as ExpressResponse } from 'express';
 
 import { User } from 'src/user/schemas/user.schema';
 
@@ -34,17 +35,14 @@ export class AuthService {
     };
   }
 
-  async verifyEmail(
-    email: string,
-    code: string,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  async verifyEmail(email: string, code: string, @Response() res: ExpressResponse) {
     const user = await this.userService.verifyEmail(email, code);
 
     const payload: JwtPayload = { sub: user._id.toString() };
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '5m',
+      expiresIn: '10m',
     });
 
     const refreshToken = this.jwtService.sign(payload, {
@@ -52,18 +50,29 @@ export class AuthService {
       expiresIn: '30d',
     });
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 10 * 60 * 1000, // 10 minutes
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
+    res.json({ message: 'Email verified successfully' });
   }
 
-  login(user: User): { accessToken: string; refreshToken: string } {
+  login(user: User, @Response() res: ExpressResponse) {
     const payload: JwtPayload = { sub: user._id.toString() };
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '5m',
+      expiresIn: '10m',
     });
 
     const refreshToken = this.jwtService.sign(payload, {
@@ -71,13 +80,24 @@ export class AuthService {
       expiresIn: '30d',
     });
 
-    return {
-      accessToken,
-      refreshToken,
-    };
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 10 * 60 * 1000, // 10 minutes
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
+    res.json({ message: 'Logged in successfully' });
   }
 
-  async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
+  async refreshToken(refreshToken: string, @Response() res: ExpressResponse) {
     try {
       const decoded: JwtPayload = this.jwtService.verify(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
@@ -85,15 +105,22 @@ export class AuthService {
 
       const user = await this.userService.findOneById(decoded.sub);
       if (!user) {
-        throw new Error();
+        throw new UnauthorizedException('Authentication failed. Please check your credentials.');
       }
 
       const newAccessToken = this.jwtService.sign(
         { email: user.email, sub: user._id.toString() },
-        { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '5m' },
+        { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '10m' },
       );
 
-      return { accessToken: newAccessToken };
+      res.cookie('access_token', newAccessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 10 * 60 * 1000, // 10 minutes
+      });
+
+      res.json({ message: 'Token refreshed successfully' });
     } catch {
       throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }

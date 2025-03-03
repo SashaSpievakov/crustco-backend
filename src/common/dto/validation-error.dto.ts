@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateErrorResponseDto {
+export class ValidationErrorResponseDto {
   @ApiProperty({
     description: 'List of validation error messages',
-    example: ['id must be a string'],
+    example: ['id must be a string', 'password must be longer than or equal to 8 characters'],
   })
   message: string[];
 
