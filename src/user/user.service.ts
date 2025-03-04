@@ -4,8 +4,6 @@ import bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { Model } from 'mongoose';
 
-import { hashEmail } from 'src/common/utils/hashEmail.utils';
-
 import { User, UserDocument } from './schemas/user.schema';
 
 @Injectable()
@@ -13,8 +11,7 @@ export class UserService {
   constructor(@InjectModel(User.name) private readonly userModel: Model<UserDocument>) {}
 
   async findOne(email: string): Promise<UserDocument | null> {
-    const hashedEmail = hashEmail(email);
-    return this.userModel.findOne({ email: hashedEmail }).exec();
+    return this.userModel.findOne({ email }).exec();
   }
 
   async findOneById(id: string): Promise<UserDocument | null> {
@@ -28,7 +25,6 @@ export class UserService {
     const verificationCodeExpiresAt = new Date();
     verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 5);
 
-    const hashedEmail = hashEmail(email);
     const hashedPassword = await bcrypt.hash(password, 12);
 
     if (existingUser) {
@@ -43,9 +39,9 @@ export class UserService {
       }
     } else {
       const newUser = new this.userModel({
-        email: hashedEmail,
+        email,
         password: hashedPassword,
-        role: ['user'],
+        roles: ['user'],
         emailVerified: false,
         verified: false,
         verificationCode,

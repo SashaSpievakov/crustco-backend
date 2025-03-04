@@ -1,31 +1,30 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
   Post,
-  Request,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Response } from 'express';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Request as ExpressRequest, Response } from 'express';
 
+import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
-import { AuthGuard } from 'src/common/guards/auth.guard';
+import { JwtAuthGuard } from 'src/common/guards/auth.guard';
 
 import { AuthService } from './auth.service';
 import { AuthenticateInputDto } from './dto/authenticate-input.dto';
 import { LoginFailedDto } from './dto/login-failed.dto';
+import { ProfileDto } from './dto/profile.dto';
 import { VerificationInputDto } from './dto/verification-input.dto';
 
-// Delete me
-export interface IRequest {
-  user: Record<any, any>;
-}
-
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -96,18 +95,41 @@ export class AuthController {
     return await this.authService.verifyEmail(email, code, res);
   }
 
-  @Post('refresh-token')
-  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get new access token' })
+  @ApiResponse({
+    status: 200,
+    description: 'Token refresh successful',
+    type: RequestSuccessDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Refresh failed',
+    type: GeneralUserErrorResponseDto,
+  })
+  @Get('refresh-token')
   async refreshToken(
-    @Body() body: { refreshToken: string },
+    @Req() req: ExpressRequest,
     @Res() res: Response,
   ): Promise<RequestSuccessDto | void> {
-    return this.authService.refreshToken(body.refreshToken, res);
+    const refreshToken: string | undefined = req.cookies?.refresh_token as string;
+
+    if (!refreshToken) {
+      throw new BadRequestException('Refresh token is missing');
+    }
+
+    return this.authService.refreshToken(refreshToken, res);
   }
 
-  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Get user profile' })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile',
+    type: ProfileDto,
+  })
+  @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@Request() req: IRequest) {
-    return req.user;
+  async getProfile(@Req() req: ExpressRequest) {
+    const accessToken: string | undefined = req.cookies?.access_token as string;
+    return await this.authService.getProfile(accessToken);
   }
 }

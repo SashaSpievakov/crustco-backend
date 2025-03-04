@@ -14,7 +14,7 @@ export class User {
   password: string;
 
   @Prop({ required: true, type: [String] })
-  role: string[];
+  roles: string[];
 
   @Prop({ required: true, default: false })
   emailVerified: boolean;
