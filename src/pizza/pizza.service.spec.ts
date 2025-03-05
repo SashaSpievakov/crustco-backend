@@ -4,7 +4,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from 'mongoose';
 
-import { UpdatePizzaDto } from './dto/pizza-update.dto';
+import { PizzaUpdateDto } from './dto/pizza-update.dto';
 import { PizzaService } from './pizza.service';
 import { Pizza, PizzaDocument } from './schemas/pizza.schema';
 
@@ -112,7 +112,7 @@ describe('PizzaService', () => {
 
       const result = await service.update('1', {
         name: 'Updated Pizza',
-      } as UpdatePizzaDto);
+      } as PizzaUpdateDto);
       expect(result).toEqual(mockPizza);
       expect(model.findOneAndUpdate).toHaveBeenCalledWith(
         { id: '1' },
@@ -126,7 +126,7 @@ describe('PizzaService', () => {
         exec: jest.fn().mockResolvedValue(null),
       });
 
-      await expect(service.update('99', { name: 'Invalid' } as UpdatePizzaDto)).rejects.toThrow(
+      await expect(service.update('99', { name: 'Invalid' } as PizzaUpdateDto)).rejects.toThrow(
         NotFoundException,
       );
     });

@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, Query } from
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
 import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { ServerErrorResponseDto } from 'src/common/dto/server-error.dto';
@@ -157,6 +158,7 @@ export class PizzaController {
     description: 'Pizza not found',
     type: GeneralUserErrorResponseDto,
   })
+  @ApiCookieAuth()
   @Delete(':id')
   async delete(
     @Param('id') id: string,

@@ -1,10 +1,11 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { DeletePizzaResponseDto } from './dto/delete-pizza.dto';
-import { CreatePizzaDto } from './dto/pizza-create.dto';
+import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
+
+import { PizzaCreateDto } from './dto/pizza-create.dto';
 import { PizzaResponseDto } from './dto/pizza-response.dto';
-import { UpdatePizzaDto } from './dto/pizza-update.dto';
+import { PizzaUpdateDto } from './dto/pizza-update.dto';
 import { PizzaController } from './pizza.controller';
 import { PizzaService } from './pizza.service';
 
@@ -70,7 +71,7 @@ describe('PizzaController', () => {
 
   describe('create', () => {
     it('should create a pizza successfully', async () => {
-      const createPizzaDto: CreatePizzaDto = {
+      const createPizzaDto: PizzaCreateDto = {
         id: '100',
         name: 'Margherita',
         description: 'Classic pizza',
@@ -90,7 +91,7 @@ describe('PizzaController', () => {
     });
 
     it('should throw a duplicate ID error if pizza with the same ID already exists', async () => {
-      const createPizzaDto: CreatePizzaDto = {
+      const createPizzaDto: PizzaCreateDto = {
         id: '100',
         name: 'Margherita',
         description: 'Classic pizza',
@@ -122,7 +123,7 @@ describe('PizzaController', () => {
 
   describe('update', () => {
     it('should update a pizza successfully', async () => {
-      const updatePizzaDto: UpdatePizzaDto = { name: 'Updated Pizza' };
+      const updatePizzaDto: PizzaUpdateDto = { name: 'Updated Pizza' };
       const updatedPizza = { ...updatePizzaDto } as PizzaResponseDto;
       mockPizzaService.update.mockResolvedValue(updatedPizza);
 
@@ -146,7 +147,7 @@ describe('PizzaController', () => {
 
   describe('delete', () => {
     it('should delete a pizza successfully', async () => {
-      const deleteResponse: DeletePizzaResponseDto = {
+      const deleteResponse: RequestSuccessDto = {
         message: 'The pizza with #1 was successfully deleted',
       };
       mockPizzaService.delete.mockResolvedValue(deleteResponse);

@@ -1,4 +1,9 @@
-import { Injectable, Response, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Response,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
@@ -123,6 +128,30 @@ export class AuthService {
       res.json({ message: 'Token refreshed successfully' });
     } catch {
       throw new UnauthorizedException('Authentication failed. Please check your credentials.');
+    }
+  }
+
+  async getProfile(accessToken: string) {
+    try {
+      const decoded: JwtPayload = this.jwtService.verify(accessToken, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
+
+      const user = await this.userService.findOneById(decoded.sub);
+      if (!user) {
+        throw new UnauthorizedException('Authentication failed. Please check your credentials.');
+      }
+
+      const safeUser = {
+        _id: user._id,
+        email: user.email,
+        roles: user.roles,
+        emailVerified: user.emailVerified,
+      };
+
+      return safeUser;
+    } catch {
+      throw new InternalServerErrorException();
     }
   }
 }
