@@ -10,14 +10,11 @@ export function setupSwagger(app: INestApplication) {
     .setTitle('Crust & Co API Docs')
     .setDescription('API documentation for Crust & Co')
     .setVersion('2.0.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-      },
-      'bearerAuth',
-    )
+    .addSecurity('cookieAuth', {
+      type: 'apiKey',
+      in: 'cookie',
+      name: 'access_token',
+    })
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -38,6 +35,21 @@ export function setupSwagger(app: INestApplication) {
               example: {
                 statusCode: 500,
                 message: 'Internal server error',
+              },
+            },
+          },
+        };
+      }
+
+      const isProtected = route.security?.some((s) => s['cookieAuth']);
+      if (isProtected && !route.responses[401]) {
+        route.responses[401] = {
+          description: 'Unauthorized - User must be authenticated via cookie',
+          content: {
+            'application/json': {
+              example: {
+                statusCode: 401,
+                message: 'Unauthorized',
               },
             },
           },

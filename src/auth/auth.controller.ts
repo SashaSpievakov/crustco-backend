@@ -13,8 +13,10 @@ import {
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request as ExpressRequest, Response } from 'express';
 
+import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
 import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
+import { UnuthorizedErrorResponseDto } from 'src/common/dto/unuthorized-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
 import { JwtAuthGuard } from 'src/common/guards/auth.guard';
 
@@ -126,6 +128,12 @@ export class AuthController {
     description: 'User profile',
     type: ProfileDto,
   })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: UnuthorizedErrorResponseDto,
+  })
+  @ApiCookieAuth()
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Req() req: ExpressRequest) {
