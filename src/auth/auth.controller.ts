@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
@@ -8,13 +7,13 @@ import {
   Post,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request as ExpressRequest, Response } from 'express';
 
 import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
-import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { UnuthorizedErrorResponseDto } from 'src/common/dto/unuthorized-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
@@ -104,9 +103,9 @@ export class AuthController {
     type: RequestSuccessDto,
   })
   @ApiResponse({
-    status: 400,
-    description: 'Refresh failed',
-    type: GeneralUserErrorResponseDto,
+    status: 401,
+    description: 'Unauthorized',
+    type: UnuthorizedErrorResponseDto,
   })
   @Get('refresh-token')
   async refreshToken(
@@ -116,7 +115,7 @@ export class AuthController {
     const refreshToken: string | undefined = req.cookies?.refresh_token as string;
 
     if (!refreshToken) {
-      throw new BadRequestException('Refresh token is missing');
+      throw new UnauthorizedException();
     }
 
     return this.authService.refreshToken(refreshToken, res);
@@ -127,11 +126,6 @@ export class AuthController {
     status: 200,
     description: 'User profile',
     type: ProfileDto,
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized',
-    type: UnuthorizedErrorResponseDto,
   })
   @ApiCookieAuth()
   @UseGuards(JwtAuthGuard)

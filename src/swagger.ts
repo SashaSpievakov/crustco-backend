@@ -44,7 +44,7 @@ export function setupSwagger(app: INestApplication) {
       const isProtected = route.security?.some((s) => s['cookieAuth']);
       if (isProtected && !route.responses[401]) {
         route.responses[401] = {
-          description: 'Unauthorized - User must be authenticated via cookie',
+          description: 'Unauthorized',
           content: {
             'application/json': {
               example: {
