@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class PizzaResponseDto {
+export class PizzaDto {
   @ApiProperty({
     example: '67b1aa61825821f9d713c890',
     description: 'MongoDB Object ID',

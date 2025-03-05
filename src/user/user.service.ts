@@ -23,12 +23,12 @@ export class UserService {
 
     const verificationCode = crypto.randomBytes(3).toString('hex');
     const verificationCodeExpiresAt = new Date();
-    verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 5);
+    verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 10);
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
     if (existingUser) {
-      if (!existingUser.verified) {
+      if (!existingUser.emailVerified) {
         existingUser.password = hashedPassword;
         existingUser.verificationCode = verificationCode;
         existingUser.verificationCodeExpiresAt = verificationCodeExpiresAt;
@@ -43,7 +43,6 @@ export class UserService {
         password: hashedPassword,
         roles: ['user'],
         emailVerified: false,
-        verified: false,
         verificationCode,
         verificationCodeExpiresAt,
       });
@@ -58,15 +57,12 @@ export class UserService {
     const user = await this.findOne(email);
     const currentTime = new Date();
 
-    if (!user) {
-      throw new BadRequestException('Invalid or expired verification code');
-    }
-
-    if (user.verificationCode !== code || user.emailVerified) {
-      throw new BadRequestException('Invalid or expired verification code');
-    }
-
-    if (user.verificationCodeExpiresAt && currentTime > user.verificationCodeExpiresAt) {
+    if (
+      !user ||
+      user.verificationCode !== code ||
+      user.emailVerified ||
+      (user.verificationCodeExpiresAt && currentTime > user.verificationCodeExpiresAt)
+    ) {
       throw new BadRequestException('Invalid or expired verification code');
     }
 

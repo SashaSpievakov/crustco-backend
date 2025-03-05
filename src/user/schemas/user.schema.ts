@@ -19,9 +19,6 @@ export class User {
   @Prop({ required: true, default: false })
   emailVerified: boolean;
 
-  @Prop({ required: true, default: false })
-  verified: boolean;
-
   @Prop()
   verificationCode: string;
 
