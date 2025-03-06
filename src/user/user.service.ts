@@ -18,20 +18,27 @@ export class UserService {
     return this.userModel.findById(id).exec();
   }
 
-  async create(email: string, password: string): Promise<User | void> {
+  async create(
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+  ): Promise<User | void> {
     const existingUser = await this.findOne(email);
 
     const verificationCode = crypto.randomBytes(3).toString('hex');
     const verificationCodeExpiresAt = new Date();
-    verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 5);
+    verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 10);
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
     if (existingUser) {
-      if (!existingUser.verified) {
+      if (!existingUser.emailVerified) {
         existingUser.password = hashedPassword;
         existingUser.verificationCode = verificationCode;
         existingUser.verificationCodeExpiresAt = verificationCodeExpiresAt;
+        existingUser.firstName = firstName;
+        existingUser.lastName = lastName;
 
         this.sendVerificationEmail(email, verificationCode);
 
@@ -41,9 +48,10 @@ export class UserService {
       const newUser = new this.userModel({
         email,
         password: hashedPassword,
+        firstName,
+        lastName,
         roles: ['user'],
         emailVerified: false,
-        verified: false,
         verificationCode,
         verificationCodeExpiresAt,
       });
@@ -58,15 +66,12 @@ export class UserService {
     const user = await this.findOne(email);
     const currentTime = new Date();
 
-    if (!user) {
-      throw new BadRequestException('Invalid or expired verification code');
-    }
-
-    if (user.verificationCode !== code || user.emailVerified) {
-      throw new BadRequestException('Invalid or expired verification code');
-    }
-
-    if (user.verificationCodeExpiresAt && currentTime > user.verificationCodeExpiresAt) {
+    if (
+      !user ||
+      user.verificationCode !== code ||
+      user.emailVerified ||
+      (user.verificationCodeExpiresAt && currentTime > user.verificationCodeExpiresAt)
+    ) {
       throw new BadRequestException('Invalid or expired verification code');
     }
 

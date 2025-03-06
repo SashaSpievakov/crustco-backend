@@ -3,8 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 
+import { PizzaDto } from './dto/pizza.dto';
 import { PizzaCreateDto } from './dto/pizza-create.dto';
-import { PizzaResponseDto } from './dto/pizza-response.dto';
 import { PizzaUpdateDto } from './dto/pizza-update.dto';
 import { PizzaController } from './pizza.controller';
 import { PizzaService } from './pizza.service';
@@ -39,7 +39,7 @@ describe('PizzaController', () => {
 
   describe('getAll', () => {
     it('should return a list of pizzas', async () => {
-      const result = [{ name: 'Margherita' }] as PizzaResponseDto[];
+      const result = [{ name: 'Margherita' }] as PizzaDto[];
       mockPizzaService.getAll.mockResolvedValue(result);
 
       expect(await controller.getAll(1, 'asc')).toBe(result);
@@ -55,7 +55,7 @@ describe('PizzaController', () => {
 
   describe('getOne', () => {
     it('should return a pizza', async () => {
-      const pizza = { name: 'Margherita' } as PizzaResponseDto;
+      const pizza = { name: 'Margherita' } as PizzaDto;
       mockPizzaService.getOne.mockResolvedValue(pizza);
 
       expect(await controller.getOne('Margherita')).toBe(pizza);
@@ -81,7 +81,7 @@ describe('PizzaController', () => {
         types: [0],
         sizes: [26],
       };
-      const pizza = { ...createPizzaDto } as PizzaResponseDto;
+      const pizza = { ...createPizzaDto } as PizzaDto;
       mockPizzaService.create.mockResolvedValue(pizza);
 
       expect(await controller.create(createPizzaDto, process.env.API_PASSWORD as string)).toBe(
@@ -124,7 +124,7 @@ describe('PizzaController', () => {
   describe('update', () => {
     it('should update a pizza successfully', async () => {
       const updatePizzaDto: PizzaUpdateDto = { name: 'Updated Pizza' };
-      const updatedPizza = { ...updatePizzaDto } as PizzaResponseDto;
+      const updatedPizza = { ...updatePizzaDto } as PizzaDto;
       mockPizzaService.update.mockResolvedValue(updatedPizza);
 
       expect(await controller.update('1', updatePizzaDto, process.env.API_PASSWORD as string)).toBe(

@@ -9,8 +9,8 @@ import { ServerErrorResponseDto } from 'src/common/dto/server-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
 import { isMongooseException } from 'src/common/utils/mongoose.utils';
 
+import { PizzaDto } from './dto/pizza.dto';
 import { PizzaCreateDto } from './dto/pizza-create.dto';
-import { PizzaResponseDto } from './dto/pizza-response.dto';
 import { PizzaUpdateDto } from './dto/pizza-update.dto';
 import { PizzaService } from './pizza.service';
 import { Pizza } from './schemas/pizza.schema';
@@ -24,7 +24,7 @@ export class PizzaController {
   @ApiResponse({
     status: 200,
     description: 'List of all pizzas',
-    type: [PizzaResponseDto],
+    type: [PizzaDto],
   })
   @ApiResponse({
     status: 500,
@@ -51,7 +51,7 @@ export class PizzaController {
   @ApiResponse({
     status: 200,
     description: 'Pizza details',
-    type: PizzaResponseDto,
+    type: PizzaDto,
   })
   @ApiResponse({
     status: 400,
@@ -74,7 +74,7 @@ export class PizzaController {
   @ApiResponse({
     status: 201,
     description: 'Pizza created successfully',
-    type: PizzaResponseDto,
+    type: PizzaDto,
   })
   @ApiResponse({
     status: 400,
@@ -114,7 +114,7 @@ export class PizzaController {
   @ApiResponse({
     status: 200,
     description: 'Pizza updated successfully',
-    type: PizzaResponseDto,
+    type: PizzaDto,
   })
   @ApiResponse({
     status: 400,

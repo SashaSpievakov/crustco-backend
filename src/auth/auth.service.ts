@@ -12,6 +12,7 @@ import { Response as ExpressResponse } from 'express';
 import { User } from 'src/user/schemas/user.schema';
 
 import { UserService } from '../user/user.service';
+import { ProfileDto } from './dto/profile.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
@@ -32,15 +33,20 @@ export class AuthService {
     throw new UnauthorizedException('Authentication failed. Please check your credentials.');
   }
 
-  async register(email: string, password: string): Promise<{ message: string }> {
-    await this.userService.create(email, password);
+  async register(
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+  ): Promise<{ message: string }> {
+    await this.userService.create(email, password, firstName, lastName);
 
     return {
       message: 'If this email is not registered, you will receive a verification email shortly.',
     };
   }
 
-  async verifyEmail(email: string, code: string, @Response() res: ExpressResponse) {
+  async verifyEmail(email: string, code: string, @Response() res: ExpressResponse): Promise<void> {
     const user = await this.userService.verifyEmail(email, code);
 
     const payload: JwtPayload = { sub: user._id.toString() };
@@ -72,7 +78,7 @@ export class AuthService {
     res.json({ message: 'Email verified successfully' });
   }
 
-  login(user: User, @Response() res: ExpressResponse) {
+  login(user: User, @Response() res: ExpressResponse): void {
     const payload: JwtPayload = { sub: user._id.toString() };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -102,7 +108,7 @@ export class AuthService {
     res.json({ message: 'Logged in successfully' });
   }
 
-  async refreshToken(refreshToken: string, @Response() res: ExpressResponse) {
+  async refreshToken(refreshToken: string, @Response() res: ExpressResponse): Promise<void> {
     try {
       const decoded: JwtPayload = this.jwtService.verify(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
@@ -131,7 +137,7 @@ export class AuthService {
     }
   }
 
-  async getProfile(accessToken: string) {
+  async getProfile(accessToken: string): Promise<ProfileDto> {
     try {
       const decoded: JwtPayload = this.jwtService.verify(accessToken, {
         secret: this.configService.get<string>('JWT_SECRET'),
@@ -144,6 +150,8 @@ export class AuthService {
 
       const safeUser = {
         _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         roles: user.roles,
         emailVerified: user.emailVerified,

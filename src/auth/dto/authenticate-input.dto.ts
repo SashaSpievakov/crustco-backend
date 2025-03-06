@@ -2,6 +2,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class AuthenticateInputDto {
+  @ApiProperty({ description: 'First name of the person', example: 'John' })
+  @IsNotEmpty()
+  firstName: string;
+
+  @ApiProperty({ description: 'Last name of the person', example: 'Smith' })
+  @IsNotEmpty()
+  lastName: string;
+
   @ApiProperty({ description: 'The email address of the user', example: 'example@gmail.com' })
   @IsEmail()
   @IsNotEmpty()
