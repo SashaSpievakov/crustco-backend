@@ -71,7 +71,12 @@ export class AuthController {
   })
   @Post('register')
   async register(@Body() registerBody: AuthenticateInputDto): Promise<RequestSuccessDto> {
-    return await this.authService.register(registerBody.email, registerBody.password);
+    return await this.authService.register(
+      registerBody.email,
+      registerBody.password,
+      registerBody.firstName,
+      registerBody.lastName,
+    );
   }
 
   @ApiOperation({ summary: "Vefify user's email" })
@@ -130,7 +135,7 @@ export class AuthController {
   @ApiCookieAuth()
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  async getProfile(@Req() req: ExpressRequest) {
+  async getProfile(@Req() req: ExpressRequest): Promise<ProfileDto> {
     const accessToken: string | undefined = req.cookies?.access_token as string;
     return await this.authService.getProfile(accessToken);
   }

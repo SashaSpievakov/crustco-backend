@@ -18,7 +18,12 @@ export class UserService {
     return this.userModel.findById(id).exec();
   }
 
-  async create(email: string, password: string): Promise<User | void> {
+  async create(
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+  ): Promise<User | void> {
     const existingUser = await this.findOne(email);
 
     const verificationCode = crypto.randomBytes(3).toString('hex');
@@ -32,6 +37,8 @@ export class UserService {
         existingUser.password = hashedPassword;
         existingUser.verificationCode = verificationCode;
         existingUser.verificationCodeExpiresAt = verificationCodeExpiresAt;
+        existingUser.firstName = firstName;
+        existingUser.lastName = lastName;
 
         this.sendVerificationEmail(email, verificationCode);
 
@@ -41,6 +48,8 @@ export class UserService {
       const newUser = new this.userModel({
         email,
         password: hashedPassword,
+        firstName,
+        lastName,
         roles: ['user'],
         emailVerified: false,
         verificationCode,

@@ -2,42 +2,45 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class PizzaCreateDto {
-  @ApiProperty({ example: '10', description: 'Unique ID of the pizza' })
+  @ApiProperty({ description: 'Unique ID of the pizza', example: '10' })
   @IsString()
   @IsNotEmpty()
   id: string;
 
-  @ApiProperty({ example: 'Pepperoni Pizza', description: 'Pizza name' })
+  @ApiProperty({ description: 'Pizza name', example: 'Pepperoni Pizza' })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({ example: 'Delicious pizza with pepperoni toppings' })
+  @ApiProperty({
+    description: 'Pizza description',
+    example: 'Delicious pizza with pepperoni toppings...',
+  })
   @IsString()
   @IsNotEmpty()
   description: string;
 
-  @ApiProperty({ example: 13, description: 'Pizza price' })
+  @ApiProperty({ description: 'Pizza price', example: 13 })
   @IsNumber()
   @IsNotEmpty()
   price: number;
 
-  @ApiProperty({ example: 1, description: 'Category ID' })
+  @ApiProperty({ description: 'Pizza category ID', example: 1 })
   @IsNumber()
   @IsNotEmpty()
   category: number;
 
-  @ApiProperty({ example: 14, description: 'Rating of the pizza' })
+  @ApiProperty({ description: 'Rating of the pizza', example: 14 })
   @IsNumber()
   @IsNotEmpty()
   rating: number;
 
-  @ApiProperty({ example: [1, 2], description: 'Available types of pizza' })
+  @ApiProperty({ description: 'Available types of pizza', example: [1, 2] })
   @IsArray()
   @IsNotEmpty()
   types: number[];
 
-  @ApiProperty({ example: [12, 16], description: 'Available pizza sizes' })
+  @ApiProperty({ description: 'Available pizza sizes', example: [12, 16] })
   @IsArray()
   @IsNotEmpty()
   sizes: number[];

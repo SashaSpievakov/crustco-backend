@@ -2,47 +2,47 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class PizzaDto {
   @ApiProperty({
-    example: '67b1aa61825821f9d713c890',
     description: 'MongoDB Object ID',
+    example: '67b1aa61825821f9d713c890',
   })
   _id: string;
 
-  @ApiProperty({ example: '40', description: 'Custom Pizza ID' })
+  @ApiProperty({ description: 'Custom Pizza ID', example: '40' })
   id: string;
 
-  @ApiProperty({ example: 'Pepperoni Pizza', description: 'Pizza name' })
+  @ApiProperty({ description: 'Pizza name', example: 'Pepperoni Pizza' })
   name: string;
 
   @ApiProperty({
-    example: 'Delicious pizza with pepperoni toppings',
     description: 'Pizza description',
+    example: 'Delicious pizza with pepperoni toppings...',
   })
   description: string;
 
-  @ApiProperty({ example: 15, description: 'Price of the pizza' })
+  @ApiProperty({ description: 'Price of the pizza', example: 15 })
   price: number;
 
-  @ApiProperty({ example: 1, description: 'Category ID' })
+  @ApiProperty({ description: 'Pizza category ID', example: 1 })
   category: number;
 
-  @ApiProperty({ example: 14, description: 'Pizza rating' })
+  @ApiProperty({ description: 'Pizza rating', example: 14 })
   rating: number;
 
-  @ApiProperty({ example: [1, 2], description: 'Array of type IDs' })
+  @ApiProperty({ description: 'Array of type IDs', example: [1, 2] })
   types: number[];
 
-  @ApiProperty({ example: [12, 16], description: 'Array of available sizes' })
+  @ApiProperty({ description: 'Array of available sizes', example: [12, 16] })
   sizes: number[];
 
   @ApiProperty({
-    example: '2025-02-16T09:05:37.441Z',
     description: 'Pizza creation timestamp',
+    example: '2025-02-16T09:05:37.441Z',
   })
   createdAt: string;
 
   @ApiProperty({
-    example: '2025-02-16T19:13:47.011Z',
     description: 'Last update timestamp',
+    example: '2025-02-16T19:13:47.011Z',
   })
   updatedAt: string;
 }

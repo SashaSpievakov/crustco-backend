@@ -3,8 +3,8 @@ import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class PizzaUpdateDto {
   @ApiProperty({
-    example: '10',
     description: 'Unique ID of the pizza',
+    example: '10',
     required: false,
   })
   @IsString()
@@ -12,8 +12,8 @@ export class PizzaUpdateDto {
   id?: string;
 
   @ApiProperty({
-    example: 'Pepperoni Pizza',
     description: 'Pizza name',
+    example: 'Pepperoni Pizza',
     required: false,
   })
   @IsString()
@@ -21,26 +21,27 @@ export class PizzaUpdateDto {
   name?: string;
 
   @ApiProperty({
-    example: 'Delicious pizza with pepperoni toppings',
+    description: 'Pizza description',
+    example: 'Delicious pizza with pepperoni toppings...',
     required: false,
   })
   @IsString()
   @IsOptional()
   description?: string;
 
-  @ApiProperty({ example: 13, description: 'Pizza price', required: false })
+  @ApiProperty({ description: 'Pizza price', example: 13, required: false })
   @IsNumber()
   @IsOptional()
   price?: number;
 
-  @ApiProperty({ example: 1, description: 'Category ID', required: false })
+  @ApiProperty({ description: 'Pizza category ID', example: 1, required: false })
   @IsNumber()
   @IsOptional()
   category?: number;
 
   @ApiProperty({
-    example: 14,
     description: 'Rating of the pizza',
+    example: 14,
     required: false,
   })
   @IsNumber()
@@ -48,8 +49,8 @@ export class PizzaUpdateDto {
   rating?: number;
 
   @ApiProperty({
-    example: [1, 2],
     description: 'Available types of pizza',
+    example: [1, 2],
     required: false,
   })
   @IsArray()
@@ -57,8 +58,8 @@ export class PizzaUpdateDto {
   types?: number[];
 
   @ApiProperty({
-    example: [12, 16],
     description: 'Available pizza sizes',
+    example: [12, 16],
     required: false,
   })
   @IsArray()
