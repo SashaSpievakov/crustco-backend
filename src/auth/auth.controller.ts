@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Request as ExpressRequest, Response } from 'express';
+import { Request, Response } from 'express';
 
 import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
@@ -52,7 +52,14 @@ export class AuthController {
   async login(
     @Body() loginBody: AuthenticateInputDto,
     @Res() res: Response,
+    @Req() req: Request,
   ): Promise<RequestSuccessDto | void> {
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+
+    console.log('User Agent:', userAgent);
+    console.log('IP Address:', ipAddress);
+
     const user = await this.authService.validateUser(loginBody.email, loginBody.password);
     return this.authService.login(user, res);
   }
@@ -113,10 +120,7 @@ export class AuthController {
     type: UnuthorizedErrorResponseDto,
   })
   @Get('refresh-token')
-  async refreshToken(
-    @Req() req: ExpressRequest,
-    @Res() res: Response,
-  ): Promise<RequestSuccessDto | void> {
+  async refreshToken(@Req() req: Request, @Res() res: Response): Promise<RequestSuccessDto | void> {
     const refreshToken: string | undefined = req.cookies?.refresh_token as string;
 
     if (!refreshToken) {
@@ -135,7 +139,7 @@ export class AuthController {
   @ApiCookieAuth()
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  async getProfile(@Req() req: ExpressRequest): Promise<ProfileDto> {
+  async getProfile(@Req() req: Request): Promise<ProfileDto> {
     const accessToken: string | undefined = req.cookies?.access_token as string;
     return await this.authService.getProfile(accessToken);
   }
