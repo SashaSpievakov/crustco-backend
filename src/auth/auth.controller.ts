@@ -20,9 +20,10 @@ import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto'
 import { JwtAuthGuard } from 'src/common/guards/auth.guard';
 
 import { AuthService } from './auth.service';
-import { AuthenticateInputDto } from './dto/authenticate-input.dto';
 import { LoginFailedDto } from './dto/login-failed.dto';
+import { LoginInputDto } from './dto/login-input.dto';
 import { ProfileDto } from './dto/profile.dto';
+import { RegisterInputDto } from './dto/register-input.dto';
 import { VerificationInputDto } from './dto/verification-input.dto';
 
 @ApiTags('Auth')
@@ -31,7 +32,7 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @ApiOperation({ summary: 'Log in into your account' })
-  @ApiBody({ type: AuthenticateInputDto })
+  @ApiBody({ type: LoginInputDto })
   @ApiResponse({
     status: 200,
     description: 'Logged in successfully',
@@ -50,7 +51,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
-    @Body() loginBody: AuthenticateInputDto,
+    @Body() loginBody: LoginInputDto,
     @Res() res: Response,
     @Req() req: Request,
   ): Promise<RequestSuccessDto | void> {
@@ -65,7 +66,7 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: 'Register a new user' })
-  @ApiBody({ type: AuthenticateInputDto })
+  @ApiBody({ type: RegisterInputDto })
   @ApiResponse({
     status: 201,
     description: 'Registration requested',
@@ -77,7 +78,7 @@ export class AuthController {
     type: ValidationErrorResponseDto,
   })
   @Post('register')
-  async register(@Body() registerBody: AuthenticateInputDto): Promise<RequestSuccessDto> {
+  async register(@Body() registerBody: RegisterInputDto): Promise<RequestSuccessDto> {
     return await this.authService.register(
       registerBody.email,
       registerBody.password,
