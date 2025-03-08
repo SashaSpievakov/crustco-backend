@@ -6,14 +6,18 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { InjectModel } from '@nestjs/mongoose';
 import bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { Response as ExpressResponse } from 'express';
+import { Model, Types } from 'mongoose';
 
 import { User } from 'src/user/schemas/user.schema';
 
 import { UserService } from '../user/user.service';
 import { ProfileDto } from './dto/profile.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { Token, TokenDocument } from './schemas/user.schema';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +25,7 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
     private readonly configService: ConfigService,
+    @InjectModel(Token.name) private readonly tokenModel: Model<TokenDocument>,
   ) {}
 
   async validateUser(email: string, password: string): Promise<User> {
@@ -46,7 +51,13 @@ export class AuthService {
     };
   }
 
-  async verifyEmail(email: string, code: string, @Response() res: ExpressResponse): Promise<void> {
+  async verifyEmail(
+    email: string,
+    code: string,
+    userAgent: string,
+    ipAddress: string | undefined,
+    @Response() res: ExpressResponse,
+  ): Promise<void> {
     const user = await this.userService.verifyEmail(email, code);
 
     const payload: JwtPayload = { sub: user._id.toString() };
@@ -75,10 +86,23 @@ export class AuthService {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
+    await this.storeRefreshToken(
+      user._id,
+      refreshToken,
+      userAgent,
+      ipAddress,
+      30 * 24 * 60 * 60 * 1000,
+    );
+
     res.json({ message: 'Email verified successfully' });
   }
 
-  login(user: User, @Response() res: ExpressResponse): void {
+  async login(
+    user: User,
+    userAgent: string,
+    ipAddress: string | undefined,
+    @Response() res: ExpressResponse,
+  ): Promise<void> {
     const payload: JwtPayload = { sub: user._id.toString() };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -105,10 +129,22 @@ export class AuthService {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
+    await this.storeRefreshToken(
+      user._id,
+      refreshToken,
+      userAgent,
+      ipAddress,
+      30 * 24 * 60 * 60 * 1000,
+    );
+
     res.json({ message: 'Logged in successfully' });
   }
 
-  async refreshToken(refreshToken: string, @Response() res: ExpressResponse): Promise<void> {
+  async refreshToken(
+    refreshToken: string,
+    userAgent: string,
+    @Response() res: ExpressResponse,
+  ): Promise<void> {
     try {
       const decoded: JwtPayload = this.jwtService.verify(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
@@ -116,6 +152,11 @@ export class AuthService {
 
       const user = await this.userService.findOneById(decoded.sub);
       if (!user) {
+        throw new UnauthorizedException('Authentication failed. Please check your credentials.');
+      }
+
+      const validToken = await this.validateRefreshToken(decoded.sub, userAgent, refreshToken);
+      if (!validToken) {
         throw new UnauthorizedException('Authentication failed. Please check your credentials.');
       }
 
@@ -161,5 +202,67 @@ export class AuthService {
     } catch {
       throw new InternalServerErrorException();
     }
+  }
+
+  //   async function logout(userId: string, refreshToken: string) {
+  //   await this.tokenModel.deleteOne({ userId, refreshToken: await hashToken(refreshToken) });
+  // }
+
+  // async function logoutAllDevices(userId: string) {
+  //   await this.tokenModel.deleteMany({ userId });
+  // }
+
+  private hashToken(token: string): string {
+    return crypto
+      .createHmac('sha256', this.configService.get<string>('TOKEN_HASH') || '')
+      .update(token)
+      .digest('hex');
+  }
+
+  private compareToken(token: string, hash: string): boolean {
+    return this.hashToken(token) === hash;
+  }
+
+  private async storeRefreshToken(
+    userId: string,
+    refreshToken: string,
+    userAgent: string,
+    ipAddress: string | undefined,
+    expiresIn: number,
+  ): Promise<Token | void> {
+    const existingToken = await this.tokenModel.findOne({ userId, userAgent }).exec();
+    const hashedToken = this.hashToken(refreshToken);
+    const expiresAt = new Date(Date.now() + expiresIn);
+
+    if (existingToken) {
+      existingToken.ipAddress = ipAddress || '';
+      existingToken.refreshToken = hashedToken;
+      existingToken.expiresAt = expiresAt;
+
+      return existingToken.save();
+    } else {
+      const newToken = new this.tokenModel({
+        userId,
+        refreshToken: hashedToken,
+        userAgent,
+        ipAddress,
+        expiresAt,
+      });
+
+      return newToken.save();
+    }
+  }
+
+  private async validateRefreshToken(
+    userId: string,
+    userAgent: string,
+    refreshToken: string,
+  ): Promise<boolean> {
+    const storedToken = await this.tokenModel
+      .findOne({ userId: new Types.ObjectId(userId), userAgent })
+      .sort({ createdAt: -1 });
+
+    if (!storedToken) return false;
+    return this.compareToken(refreshToken, storedToken.refreshToken);
   }
 }

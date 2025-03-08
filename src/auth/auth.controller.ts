@@ -52,17 +52,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginBody: LoginInputDto,
-    @Res() res: Response,
     @Req() req: Request,
+    @Res() res: Response,
   ): Promise<RequestSuccessDto | void> {
     const userAgent = req.headers['user-agent'] || 'Unknown';
     const ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
 
-    console.log('User Agent:', userAgent);
-    console.log('IP Address:', ipAddress);
-
     const user = await this.authService.validateUser(loginBody.email, loginBody.password);
-    return this.authService.login(user, res);
+    return this.authService.login(user, userAgent, ipAddress, res);
   }
 
   @ApiOperation({ summary: 'Register a new user' })
@@ -103,10 +100,13 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async verifyEmail(
     @Body() verificationBody: VerificationInputDto,
+    @Req() req: Request,
     @Res() res: Response,
   ): Promise<RequestSuccessDto | void> {
     const { email, code } = verificationBody;
-    return await this.authService.verifyEmail(email, code, res);
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+    return await this.authService.verifyEmail(email, code, userAgent, ipAddress, res);
   }
 
   @ApiOperation({ summary: 'Get new access token' })
@@ -123,12 +123,13 @@ export class AuthController {
   @Get('refresh-token')
   async refreshToken(@Req() req: Request, @Res() res: Response): Promise<RequestSuccessDto | void> {
     const refreshToken: string | undefined = req.cookies?.refresh_token as string;
+    const userAgent = req.headers['user-agent'] || 'Unknown';
 
     if (!refreshToken) {
       throw new UnauthorizedException();
     }
 
-    return this.authService.refreshToken(refreshToken, res);
+    return this.authService.refreshToken(refreshToken, userAgent, res);
   }
 
   @ApiOperation({ summary: 'Get user profile' })

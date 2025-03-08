@@ -16,6 +16,11 @@ export class Token {
 
   @Prop({ required: true })
   ipAddress: string;
+
+  @Prop({ required: true })
+  expiresAt: Date;
 }
 
 export const TokenSchema = SchemaFactory.createForClass(Token);
+
+TokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // Auto delete documents after expiration.
