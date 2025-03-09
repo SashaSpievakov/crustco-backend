@@ -17,7 +17,7 @@ import { User } from 'src/user/schemas/user.schema';
 import { UserService } from '../user/user.service';
 import { ProfileDto } from './dto/profile.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
-import { Token, TokenDocument } from './schemas/user.schema';
+import { Token, TokenDocument } from './schemas/token.schema';
 
 @Injectable()
 export class AuthService {
