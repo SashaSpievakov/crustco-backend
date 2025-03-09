@@ -204,13 +204,45 @@ export class AuthService {
     }
   }
 
-  //   async function logout(userId: string, refreshToken: string) {
-  //   await this.tokenModel.deleteOne({ userId, refreshToken: await hashToken(refreshToken) });
-  // }
+  async logout(
+    logoutAll: boolean,
+    refreshToken: string | undefined,
+    userAgent: string,
+    @Response() res: ExpressResponse,
+  ): Promise<void> {
+    if (refreshToken) {
+      const decoded: JwtPayload = this.jwtService.verify(refreshToken, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      });
 
-  // async function logoutAllDevices(userId: string) {
-  //   await this.tokenModel.deleteMany({ userId });
-  // }
+      if (logoutAll) {
+        await this.tokenModel.deleteMany({
+          userId: new Types.ObjectId(decoded.sub),
+        });
+      } else {
+        const hashedToken = this.hashToken(refreshToken);
+        await this.tokenModel.deleteOne({
+          userId: new Types.ObjectId(decoded.sub),
+          refreshToken: hashedToken,
+          userAgent,
+        });
+      }
+    }
+
+    res.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+    });
+
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+    });
+
+    res.json({ message: 'Successfully logged out' });
+  }
 
   private hashToken(token: string): string {
     return crypto

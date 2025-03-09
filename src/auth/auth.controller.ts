@@ -1,10 +1,13 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   HttpCode,
   HttpStatus,
+  ParseBoolPipe,
   Post,
+  Query,
   Req,
   Res,
   UnauthorizedException,
@@ -142,7 +145,28 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Req() req: Request): Promise<ProfileDto> {
-    const accessToken: string | undefined = req.cookies?.access_token as string;
+    const accessToken: string = req.cookies?.access_token as string;
     return await this.authService.getProfile(accessToken);
+  }
+
+  @ApiOperation({ summary: 'Log out of the account' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully logged out',
+    type: RequestSuccessDto,
+  })
+  @ApiCookieAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('logoutAll', new DefaultValuePipe(false), ParseBoolPipe) logoutAll: boolean,
+  ): Promise<RequestSuccessDto | void> {
+    const refreshToken: string = req.cookies?.refresh_token as string;
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+
+    return await this.authService.logout(logoutAll, refreshToken, userAgent, res);
   }
 }
