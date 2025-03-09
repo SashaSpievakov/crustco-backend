@@ -83,6 +83,20 @@ export class UserService {
     return user;
   }
 
+  async updatePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+    const user = await this.findOneById(userId);
+
+    if (!user || !(await bcrypt.compare(oldPassword, user.password))) {
+      throw new BadRequestException('Invalid old password');
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+
+    user.password = hashedNewPassword;
+    await user.save();
+    return;
+  }
+
   private sendVerificationEmail(email: string, verificationCode: string): void {
     // Implement the logic for sending the verification email.
     // You can use Nodemailer, SendGrid, SES, etc.
