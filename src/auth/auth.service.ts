@@ -94,7 +94,7 @@ export class AuthService {
       30 * 24 * 60 * 60 * 1000,
     );
 
-    res.json({ message: 'Email verified successfully' });
+    res.json({ message: 'Email verified successfully.' });
   }
 
   async login(
@@ -137,7 +137,7 @@ export class AuthService {
       30 * 24 * 60 * 60 * 1000,
     );
 
-    res.json({ message: 'Logged in successfully' });
+    res.json({ message: 'Logged in successfully.' });
   }
 
   async refreshToken(
@@ -172,7 +172,7 @@ export class AuthService {
         maxAge: 10 * 60 * 1000, // 10 minutes
       });
 
-      res.json({ message: 'Token refreshed successfully' });
+      res.json({ message: 'Token refreshed successfully.' });
     } catch {
       throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }
@@ -202,6 +202,19 @@ export class AuthService {
     } catch {
       throw new InternalServerErrorException();
     }
+  }
+
+  async resetPassword(
+    accessToken: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const decoded: JwtPayload = this.jwtService.verify(accessToken, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+    });
+
+    await this.userService.updatePassword(decoded.sub, oldPassword, newPassword);
+    return;
   }
 
   async logout(
@@ -241,7 +254,7 @@ export class AuthService {
       sameSite: 'strict',
     });
 
-    res.json({ message: 'Successfully logged out' });
+    res.json({ message: 'Successfully logged out.' });
   }
 
   private hashToken(token: string): string {

@@ -27,6 +27,7 @@ import { LoginFailedDto } from './dto/login-failed.dto';
 import { LoginInputDto } from './dto/login-input.dto';
 import { ProfileDto } from './dto/profile.dto';
 import { RegisterInputDto } from './dto/register-input.dto';
+import { ResetPasswordInputDto } from './dto/reset-paswword-input.dto';
 import { VerificationInputDto } from './dto/verification-input.dto';
 
 @ApiTags('Auth')
@@ -147,6 +148,32 @@ export class AuthController {
   async getProfile(@Req() req: Request): Promise<ProfileDto> {
     const accessToken: string = req.cookies?.access_token as string;
     return await this.authService.getProfile(accessToken);
+  }
+
+  @ApiOperation({ summary: 'Reset user password' })
+  @ApiBody({ type: ResetPasswordInputDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset successfully',
+    type: RequestSuccessDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input',
+    type: ValidationErrorResponseDto,
+  })
+  @ApiCookieAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(
+    @Body() resetBody: ResetPasswordInputDto,
+    @Req() req: Request,
+  ): Promise<RequestSuccessDto> {
+    const accessToken: string = req.cookies?.access_token as string;
+
+    await this.authService.resetPassword(accessToken, resetBody.oldPassword, resetBody.newPassword);
+    return { message: 'Password reset successfully.' };
   }
 
   @ApiOperation({ summary: 'Log out of the account' })
