@@ -147,6 +147,8 @@ export class AuthController {
   @Get('profile')
   async getProfile(@Req() req: Request): Promise<ProfileDto> {
     const accessToken: string = req.cookies?.access_token as string;
+    console.log(req.user);
+    // Change to take user from the request
     return await this.authService.getProfile(accessToken);
   }
 
