@@ -178,13 +178,9 @@ export class AuthService {
     }
   }
 
-  async getProfile(accessToken: string): Promise<ProfileDto> {
+  async getProfile(userId: string): Promise<ProfileDto> {
     try {
-      const decoded: JwtPayload = this.jwtService.verify(accessToken, {
-        secret: this.configService.get<string>('JWT_SECRET'),
-      });
-
-      const user = await this.userService.findOneById(decoded.sub);
+      const user = await this.userService.findOneById(userId);
       if (!user) {
         throw new UnauthorizedException('Authentication failed. Please check your credentials.');
       }

@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Logger, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Logger,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -7,6 +18,7 @@ import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.d
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { ServerErrorResponseDto } from 'src/common/dto/server-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
+import { JwtAuthGuard } from 'src/common/guards/auth.guard';
 import { isMongooseException } from 'src/common/utils/mongoose.utils';
 
 import { PizzaDto } from './dto/pizza.dto';
@@ -159,16 +171,10 @@ export class PizzaController {
     type: GeneralUserErrorResponseDto,
   })
   @ApiCookieAuth()
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async delete(
-    @Param('id') id: string,
-    @Query('password') password: string,
-  ): Promise<RequestSuccessDto> {
+  async delete(@Param('id') id: string): Promise<RequestSuccessDto> {
     try {
-      if (password !== process.env.API_PASSWORD) {
-        throw new HttpException('Forbidden: No permission to delete pizza', HttpStatus.FORBIDDEN);
-      }
-
       await this.pizzaService.delete(id);
       return {
         message: `The pizza with #${id} was successfully deleted`,

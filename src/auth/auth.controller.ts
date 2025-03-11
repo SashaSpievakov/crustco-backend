@@ -21,6 +21,7 @@ import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { UnuthorizedErrorResponseDto } from 'src/common/dto/unuthorized-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
 import { JwtAuthGuard } from 'src/common/guards/auth.guard';
+import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
 
 import { AuthService } from './auth.service';
 import { LoginFailedDto } from './dto/login-failed.dto';
@@ -145,11 +146,8 @@ export class AuthController {
   @ApiCookieAuth()
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  async getProfile(@Req() req: Request): Promise<ProfileDto> {
-    const accessToken: string = req.cookies?.access_token as string;
-    console.log(req.user);
-    // Change to take user from the request
-    return await this.authService.getProfile(accessToken);
+  async getProfile(@Req() req: AuthenticatedRequest): Promise<ProfileDto> {
+    return await this.authService.getProfile(req.user.sub);
   }
 
   @ApiOperation({ summary: 'Reset user password' })
