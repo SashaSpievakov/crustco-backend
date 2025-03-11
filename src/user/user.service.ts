@@ -1,14 +1,25 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { Model } from 'mongoose';
+import * as nodemailer from 'nodemailer';
 
+import { getVerificationEmailTemplate } from './emails/email-verification.template';
 import { User, UserDocument } from './schemas/user.schema';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private readonly userModel: Model<UserDocument>) {}
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+  ) {}
 
   async findOne(email: string): Promise<UserDocument | null> {
     return this.userModel.findOne({ email }).exec();
@@ -40,7 +51,7 @@ export class UserService {
         existingUser.firstName = firstName;
         existingUser.lastName = lastName;
 
-        this.sendVerificationEmail(email, verificationCode);
+        await this.sendVerificationEmail(email, verificationCode);
 
         return existingUser.save();
       }
@@ -56,7 +67,7 @@ export class UserService {
         verificationCodeExpiresAt,
       });
 
-      this.sendVerificationEmail(email, verificationCode);
+      await this.sendVerificationEmail(email, verificationCode);
 
       return newUser.save();
     }
@@ -97,9 +108,30 @@ export class UserService {
     return;
   }
 
-  private sendVerificationEmail(email: string, verificationCode: string): void {
-    // Implement the logic for sending the verification email.
-    // You can use Nodemailer, SendGrid, SES, etc.
-    console.log(`Sending verification email to ${email} with code: ${verificationCode}`);
+  private async sendVerificationEmail(email: string, verificationCode: string): Promise<void> {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: this.configService.get<string>('EMAIL_USER'),
+        pass: this.configService.get<string>('EMAIL_PASS'),
+      },
+    });
+
+    const { text, html } = getVerificationEmailTemplate(verificationCode);
+    const mailOptions = {
+      from: `"Crustco Support" <${this.configService.get<string>('EMAIL_USER')}>`,
+      to: email,
+      subject: 'Verify Your Email Address - Crustco',
+      text,
+      html,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      Logger.log(`Verification email sent to ${email}, ${verificationCode}`, 'UserService');
+    } catch (error) {
+      Logger.log(`Error sending verification email to ${email}:`, error, 'UserService');
+      throw new InternalServerErrorException();
+    }
   }
 }
