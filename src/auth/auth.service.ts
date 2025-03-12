@@ -200,16 +200,8 @@ export class AuthService {
     }
   }
 
-  async resetPassword(
-    accessToken: string,
-    oldPassword: string,
-    newPassword: string,
-  ): Promise<void> {
-    const decoded: JwtPayload = this.jwtService.verify(accessToken, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-    });
-
-    await this.userService.updatePassword(decoded.sub, oldPassword, newPassword);
+  async resetPassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+    await this.userService.updatePassword(userId, oldPassword, newPassword);
     return;
   }
 

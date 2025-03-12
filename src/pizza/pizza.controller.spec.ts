@@ -152,9 +152,7 @@ describe('PizzaController', () => {
       };
       mockPizzaService.delete.mockResolvedValue(deleteResponse);
 
-      expect(await controller.delete('1', process.env.API_PASSWORD as string)).toEqual(
-        deleteResponse,
-      );
+      expect(await controller.delete('1')).toEqual(deleteResponse);
 
       expect(mockPizzaService.delete).toHaveBeenCalledWith('1');
     });
@@ -163,9 +161,7 @@ describe('PizzaController', () => {
       const errorMessage = 'Pizza not found';
       mockPizzaService.delete.mockRejectedValue(new Error(errorMessage));
 
-      await expect(controller.delete('1', process.env.API_PASSWORD as string)).rejects.toThrow(
-        new Error(errorMessage),
-      );
+      await expect(controller.delete('1')).rejects.toThrow(new Error(errorMessage));
 
       expect(mockPizzaService.delete).toHaveBeenCalledWith('1');
     });

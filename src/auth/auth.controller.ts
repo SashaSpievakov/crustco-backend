@@ -168,11 +168,13 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async resetPassword(
     @Body() resetBody: ResetPasswordInputDto,
-    @Req() req: Request,
+    @Req() req: AuthenticatedRequest,
   ): Promise<RequestSuccessDto> {
-    const accessToken: string = req.cookies?.access_token as string;
-
-    await this.authService.resetPassword(accessToken, resetBody.oldPassword, resetBody.newPassword);
+    await this.authService.resetPassword(
+      req.user.sub,
+      resetBody.oldPassword,
+      resetBody.newPassword,
+    );
     return { message: 'Password reset successfully.' };
   }
 
