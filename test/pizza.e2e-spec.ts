@@ -75,7 +75,6 @@ describe('PizzaController (e2e)', () => {
 
     return request(app.getHttpServer() as Server)
       .post('/pizza')
-      .query({ password: process.env.API_PASSWORD })
       .send(createPizzaDto)
       .expect(201)
       .expect(createPizzaDto);
@@ -99,7 +98,6 @@ describe('PizzaController (e2e)', () => {
 
     return request(app.getHttpServer() as Server)
       .post('/pizza')
-      .query({ password: process.env.API_PASSWORD })
       .send(createPizzaDto)
       .expect(400)
       .expect({
@@ -116,7 +114,6 @@ describe('PizzaController (e2e)', () => {
 
     return request(app.getHttpServer() as Server)
       .patch('/pizza/1')
-      .query({ password: process.env.API_PASSWORD })
       .send(updatePizzaDto)
       .expect(200)
       .expect(updatedPizza);
@@ -129,7 +126,6 @@ describe('PizzaController (e2e)', () => {
 
     return request(app.getHttpServer() as Server)
       .delete('/pizza/1')
-      .query({ password: process.env.API_PASSWORD })
       .expect(200)
       .expect(deleteResponse);
   });
@@ -139,7 +135,6 @@ describe('PizzaController (e2e)', () => {
 
     return request(app.getHttpServer() as Server)
       .delete('/pizza/100')
-      .query({ password: process.env.API_PASSWORD })
       .expect(400)
       .expect({ statusCode: 400, message: 'Pizza not found' });
   });

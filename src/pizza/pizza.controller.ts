@@ -93,16 +93,11 @@ export class PizzaController {
     description: 'Invalid input',
     type: ValidationErrorResponseDto,
   })
+  @ApiCookieAuth()
+  @UseGuards(JwtAuthGuard)
   @Post()
-  async create(
-    @Body() pizzaBody: PizzaCreateDto,
-    @Query('password') password: string,
-  ): Promise<Pizza> {
+  async create(@Body() pizzaBody: PizzaCreateDto): Promise<Pizza> {
     try {
-      if (password !== process.env.API_PASSWORD) {
-        throw new HttpException('Forbidden: No permission to create pizza', HttpStatus.FORBIDDEN);
-      }
-
       const pizza = await this.pizzaService.create(pizzaBody);
       return pizza;
     } catch (err) {
@@ -133,17 +128,11 @@ export class PizzaController {
     description: 'Invalid input',
     type: ValidationErrorResponseDto,
   })
+  @ApiCookieAuth()
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updatePizzaDto: PizzaUpdateDto,
-    @Query('password') password: string,
-  ): Promise<Pizza> {
+  async update(@Param('id') id: string, @Body() updatePizzaDto: PizzaUpdateDto): Promise<Pizza> {
     try {
-      if (password !== process.env.API_PASSWORD) {
-        throw new HttpException('Forbidden: No permission to update pizza', HttpStatus.FORBIDDEN);
-      }
-
       const updatedPizza = await this.pizzaService.update(id, updatePizzaDto);
       return updatedPizza;
     } catch (err) {

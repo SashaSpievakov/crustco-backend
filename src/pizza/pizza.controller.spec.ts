@@ -84,9 +84,7 @@ describe('PizzaController', () => {
       const pizza = { ...createPizzaDto } as PizzaDto;
       mockPizzaService.create.mockResolvedValue(pizza);
 
-      expect(await controller.create(createPizzaDto, process.env.API_PASSWORD as string)).toBe(
-        pizza,
-      );
+      expect(await controller.create(createPizzaDto)).toBe(pizza);
       expect(mockPizzaService.create).toHaveBeenCalledWith(createPizzaDto);
     });
 
@@ -108,9 +106,7 @@ describe('PizzaController', () => {
       };
       mockPizzaService.create.mockRejectedValue(duplicateError);
 
-      await expect(
-        controller.create(createPizzaDto, process.env.API_PASSWORD as string),
-      ).rejects.toThrow(
+      await expect(controller.create(createPizzaDto)).rejects.toThrow(
         new HttpException(
           'Duplicate ID found, pizza with this ID already exists',
           HttpStatus.BAD_REQUEST,
@@ -127,9 +123,7 @@ describe('PizzaController', () => {
       const updatedPizza = { ...updatePizzaDto } as PizzaDto;
       mockPizzaService.update.mockResolvedValue(updatedPizza);
 
-      expect(await controller.update('1', updatePizzaDto, process.env.API_PASSWORD as string)).toBe(
-        updatedPizza,
-      );
+      expect(await controller.update('1', updatePizzaDto)).toBe(updatedPizza);
       expect(mockPizzaService.update).toHaveBeenCalledWith('1', updatePizzaDto);
     });
 
@@ -137,9 +131,9 @@ describe('PizzaController', () => {
       const errorMessage = 'Pizza not found';
       mockPizzaService.update.mockRejectedValue(new Error(errorMessage));
 
-      await expect(
-        controller.update('1', { name: 'Updated Pizza' }, process.env.API_PASSWORD as string),
-      ).rejects.toThrow(new Error(errorMessage));
+      await expect(controller.update('1', { name: 'Updated Pizza' })).rejects.toThrow(
+        new Error(errorMessage),
+      );
 
       expect(mockPizzaService.update).toHaveBeenCalledWith('1', { name: 'Updated Pizza' });
     });
