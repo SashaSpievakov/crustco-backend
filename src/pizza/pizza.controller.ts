@@ -14,11 +14,13 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
+import { Roles } from 'src/common/decorators/roles.decorator';
 import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { ServerErrorResponseDto } from 'src/common/dto/server-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
-import { JwtAuthGuard } from 'src/common/guards/auth.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 import { isMongooseException } from 'src/common/utils/mongoose.utils';
 
 import { PizzaDto } from './dto/pizza.dto';
@@ -93,16 +95,13 @@ export class PizzaController {
     description: 'Invalid input',
     type: ValidationErrorResponseDto,
   })
+  @ApiCookieAuth()
+  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Admin')
   @Post()
-  async create(
-    @Body() pizzaBody: PizzaCreateDto,
-    @Query('password') password: string,
-  ): Promise<Pizza> {
+  async create(@Body() pizzaBody: PizzaCreateDto): Promise<Pizza> {
     try {
-      if (password !== process.env.API_PASSWORD) {
-        throw new HttpException('Forbidden: No permission to create pizza', HttpStatus.FORBIDDEN);
-      }
-
       const pizza = await this.pizzaService.create(pizzaBody);
       return pizza;
     } catch (err) {
@@ -133,17 +132,13 @@ export class PizzaController {
     description: 'Invalid input',
     type: ValidationErrorResponseDto,
   })
+  @ApiCookieAuth()
+  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Admin')
   @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updatePizzaDto: PizzaUpdateDto,
-    @Query('password') password: string,
-  ): Promise<Pizza> {
+  async update(@Param('id') id: string, @Body() updatePizzaDto: PizzaUpdateDto): Promise<Pizza> {
     try {
-      if (password !== process.env.API_PASSWORD) {
-        throw new HttpException('Forbidden: No permission to update pizza', HttpStatus.FORBIDDEN);
-      }
-
       const updatedPizza = await this.pizzaService.update(id, updatePizzaDto);
       return updatedPizza;
     } catch (err) {
@@ -171,7 +166,8 @@ export class PizzaController {
     type: GeneralUserErrorResponseDto,
   })
   @ApiCookieAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Admin')
   @Delete(':id')
   async delete(@Param('id') id: string): Promise<RequestSuccessDto> {
     try {
