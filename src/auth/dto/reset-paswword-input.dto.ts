@@ -13,7 +13,7 @@ export class ResetPasswordInputDto {
     /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>;'[\]\\/])[A-Za-z\d!@#$%^&*(),.?":{}|<>;'[\]\\/]+$/,
     {
       message:
-        'Password must contain at least one uppercase letter, one number, and one special character',
+        'Old password must contain at least one uppercase letter, one number, and one special character',
     },
   )
   oldPassword: string;
@@ -30,7 +30,7 @@ export class ResetPasswordInputDto {
     /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>;'[\]\\/])[A-Za-z\d!@#$%^&*(),.?":{}|<>;'[\]\\/]+$/,
     {
       message:
-        'Password must contain at least one uppercase letter, one number, and one special character',
+        'New password must contain at least one uppercase letter, one number, and one special character',
     },
   )
   newPassword: string;
