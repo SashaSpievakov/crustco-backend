@@ -20,7 +20,7 @@ import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { UnuthorizedErrorResponseDto } from 'src/common/dto/unuthorized-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
-import { JwtAuthGuard } from 'src/common/guards/auth.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
 
 import { AuthService } from './auth.service';

@@ -61,7 +61,7 @@ export class UserService {
         password: hashedPassword,
         firstName,
         lastName,
-        roles: ['user'],
+        roles: ['User'],
         emailVerified: false,
         verificationCode,
         verificationCodeExpiresAt,

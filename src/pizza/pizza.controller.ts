@@ -14,11 +14,13 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
+import { Roles } from 'src/common/decorators/roles.decorator';
 import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { ServerErrorResponseDto } from 'src/common/dto/server-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
-import { JwtAuthGuard } from 'src/common/guards/auth.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 import { isMongooseException } from 'src/common/utils/mongoose.utils';
 
 import { PizzaDto } from './dto/pizza.dto';
@@ -95,6 +97,8 @@ export class PizzaController {
   })
   @ApiCookieAuth()
   @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Admin')
   @Post()
   async create(@Body() pizzaBody: PizzaCreateDto): Promise<Pizza> {
     try {
@@ -130,6 +134,8 @@ export class PizzaController {
   })
   @ApiCookieAuth()
   @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Admin')
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updatePizzaDto: PizzaUpdateDto): Promise<Pizza> {
     try {
@@ -160,7 +166,8 @@ export class PizzaController {
     type: GeneralUserErrorResponseDto,
   })
   @ApiCookieAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Admin')
   @Delete(':id')
   async delete(@Param('id') id: string): Promise<RequestSuccessDto> {
     try {
