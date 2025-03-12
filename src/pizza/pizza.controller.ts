@@ -13,7 +13,6 @@ import {
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
@@ -95,8 +94,6 @@ export class PizzaController {
     description: 'Invalid input',
     type: ValidationErrorResponseDto,
   })
-  @ApiCookieAuth()
-  @UseGuards(JwtAuthGuard)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
   @Post()
@@ -132,8 +129,6 @@ export class PizzaController {
     description: 'Invalid input',
     type: ValidationErrorResponseDto,
   })
-  @ApiCookieAuth()
-  @UseGuards(JwtAuthGuard)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
   @Patch(':id')
@@ -165,7 +160,6 @@ export class PizzaController {
     description: 'Pizza not found',
     type: GeneralUserErrorResponseDto,
   })
-  @ApiCookieAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
   @Delete(':id')

@@ -18,7 +18,7 @@ import { Request, Response } from 'express';
 
 import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
-import { UnuthorizedErrorResponseDto } from 'src/common/dto/unuthorized-error.dto';
+import { UnauthorizedErrorResponseDto } from 'src/common/dto/unauthorized-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
@@ -123,7 +123,7 @@ export class AuthController {
   @ApiResponse({
     status: 401,
     description: 'Unauthorized',
-    type: UnuthorizedErrorResponseDto,
+    type: UnauthorizedErrorResponseDto,
   })
   @Get('refresh-token')
   async refreshToken(@Req() req: Request, @Res() res: Response): Promise<RequestSuccessDto | void> {

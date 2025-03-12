@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UnuthorizedErrorResponseDto {
+export class UnauthorizedErrorResponseDto {
   @ApiProperty({
     description: 'The error message providing details about the issue',
     example: 'Unauthorized',
@@ -12,9 +12,4 @@ export class UnuthorizedErrorResponseDto {
     example: 401,
   })
   statusCode: number;
-
-  constructor(statusCode: number, message: string) {
-    this.statusCode = statusCode;
-    this.message = message;
-  }
 }

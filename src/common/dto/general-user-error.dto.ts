@@ -12,9 +12,4 @@ export class GeneralUserErrorResponseDto {
     example: 'Bad Request',
   })
   message: string;
-
-  constructor(statusCode: number, message: string) {
-    this.statusCode = statusCode;
-    this.message = message;
-  }
 }
