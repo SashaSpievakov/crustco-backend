@@ -18,17 +18,18 @@ import { Request, Response } from 'express';
 
 import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
-import { UnuthorizedErrorResponseDto } from 'src/common/dto/unuthorized-error.dto';
+import { UnauthorizedErrorResponseDto } from 'src/common/dto/unauthorized-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
 
 import { AuthService } from './auth.service';
+import { ForgotPasswordInputDto } from './dto/forgot-password-input.dto';
 import { LoginFailedDto } from './dto/login-failed.dto';
 import { LoginInputDto } from './dto/login-input.dto';
 import { ProfileDto } from './dto/profile.dto';
 import { RegisterInputDto } from './dto/register-input.dto';
-import { ResetPasswordInputDto } from './dto/reset-paswword-input.dto';
+import { ResetPasswordInputDto } from './dto/reset-password-input.dto';
 import { VerificationInputDto } from './dto/verification-input.dto';
 
 @ApiTags('Auth')
@@ -123,7 +124,7 @@ export class AuthController {
   @ApiResponse({
     status: 401,
     description: 'Unauthorized',
-    type: UnuthorizedErrorResponseDto,
+    type: UnauthorizedErrorResponseDto,
   })
   @Get('refresh-token')
   async refreshToken(@Req() req: Request, @Res() res: Response): Promise<RequestSuccessDto | void> {
@@ -176,6 +177,34 @@ export class AuthController {
       resetBody.newPassword,
     );
     return { message: 'Password reset successfully.' };
+  }
+
+  @ApiOperation({ summary: 'Forgot password' })
+  @ApiBody({ type: ForgotPasswordInputDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset successfully',
+    type: RequestSuccessDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input',
+    type: ValidationErrorResponseDto,
+  })
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() forgotBody: ForgotPasswordInputDto): Promise<RequestSuccessDto> {
+    const user = await this.authService.forgotPassword(
+      forgotBody.email,
+      forgotBody.code,
+      forgotBody.password,
+    );
+
+    if (user) {
+      return { message: 'Password updated successfully' };
+    } else {
+      return { message: 'If this email exists, a reset link has been sent.' };
+    }
   }
 
   @ApiOperation({ summary: 'Log out of the account' })

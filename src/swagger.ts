@@ -55,22 +55,6 @@ export function setupSwagger(app: INestApplication) {
           },
         };
       }
-
-      // const isRoleProtected =
-      //   route.security?.some((s) => s['cookieAuth']) && route.operationId?.includes('RolesGuard');
-      // if (isRoleProtected && !route.responses[403]) {
-      //   route.responses[403] = {
-      //     description: 'Forbidden - Insufficient Permissions',
-      //     content: {
-      //       'application/json': {
-      //         example: {
-      //           statusCode: 403,
-      //           message: 'Forbidden - You do not have the required role to access this resource.',
-      //         },
-      //       },
-      //     },
-      //   };
-      // }
     });
   });
 

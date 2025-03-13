@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Response,
@@ -203,6 +204,19 @@ export class AuthService {
   async resetPassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
     await this.userService.updatePassword(userId, oldPassword, newPassword);
     return;
+  }
+
+  async forgotPassword(email: string, code?: string, password?: string): Promise<void | User> {
+    if (code || password) {
+      if (code && password) {
+        return await this.userService.createNewPassword(email, code, password);
+      } else {
+        throw new BadRequestException('Provide valid code and password');
+      }
+    } else {
+      await this.userService.initializeForgotPassword(email);
+      return;
+    }
   }
 
   async logout(
