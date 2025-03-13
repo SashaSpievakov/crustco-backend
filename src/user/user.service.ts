@@ -12,6 +12,8 @@ import { Model } from 'mongoose';
 import * as nodemailer from 'nodemailer';
 import { MailOptions } from 'nodemailer/lib/smtp-transport';
 
+import { ProviderUser } from 'src/common/types/provider-user.type';
+
 import { getVerificationEmailTemplate } from './emails/email-verification.template';
 import { getForgotPasswordTemplate } from './emails/forgot-password.template';
 import { User, UserDocument } from './schemas/user.schema';
@@ -31,7 +33,7 @@ export class UserService {
     return this.userModel.findById(id).exec();
   }
 
-  async create(
+  async register(
     email: string,
     password: string,
     firstName: string,
@@ -84,6 +86,24 @@ export class UserService {
     }
   }
 
+  async registerWithProvider(providerUser: ProviderUser): Promise<UserDocument | void> {
+    const existingUser = await this.findOne(providerUser.email);
+
+    if (!existingUser) {
+      const newUser = new this.userModel({
+        email: providerUser.email,
+        firstName: providerUser.firstName,
+        lastName: providerUser.lastName,
+        roles: ['User'],
+        emailVerified: true,
+        provider: providerUser.provider,
+        photo: providerUser.photo,
+      });
+
+      return newUser.save();
+    }
+  }
+
   async verifyEmail(email: string, code: string): Promise<User> {
     const user = await this.findOne(email);
     const currentTime = new Date();
@@ -108,7 +128,7 @@ export class UserService {
   async updatePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
     const user = await this.findOneById(userId);
 
-    if (!user || !(await bcrypt.compare(oldPassword, user.password))) {
+    if (!user || !user.password || !(await bcrypt.compare(oldPassword, user.password))) {
       throw new BadRequestException('Invalid old password');
     }
 
@@ -121,7 +141,7 @@ export class UserService {
 
   async initializeForgotPassword(email: string): Promise<void> {
     const user = await this.findOne(email);
-    if (user) {
+    if (user && user.provider === null) {
       const verificationCode = crypto.randomBytes(3).toString('hex');
       const verificationCodeExpiresAt = new Date();
       verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 10);

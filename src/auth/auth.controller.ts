@@ -20,8 +20,10 @@ import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { UnauthorizedErrorResponseDto } from 'src/common/dto/unauthorized-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
+import { GoogleAuthGuard } from 'src/common/guards/google-auth.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
+import { AuthenticatedRequest } from 'src/common/types/authenticated-request.type';
+import { GoogleAuthenticatedRequest } from 'src/common/types/google-authenticated-request.type';
 
 import { AuthService } from './auth.service';
 import { ForgotPasswordInputDto } from './dto/forgot-password-input.dto';
@@ -66,6 +68,41 @@ export class AuthController {
 
     const user = await this.authService.validateUser(loginBody.email, loginBody.password);
     return this.authService.login(user, userAgent, ipAddress, res);
+  }
+
+  @ApiOperation({
+    summary: 'Redirect to Google login',
+    description: 'Starts the Google OAuth authentication flow.',
+  })
+  @ApiResponse({ status: 302, description: 'Redirects user to Google login page' })
+  @Get('login-google')
+  @UseGuards(GoogleAuthGuard)
+  googleLogin() {}
+
+  @ApiOperation({
+    summary: 'Handle Google OAuth callback',
+    description: 'Processes the OAuth callback from Google after user authentication.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Authorized successfully with Google',
+    type: RequestSuccessDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: UnauthorizedErrorResponseDto,
+  })
+  @Get('google-callback')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuthRedirect(
+    @Req() req: GoogleAuthenticatedRequest,
+    @Res() res: Response,
+  ): Promise<void> {
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+
+    await this.authService.googleLogin(req.user, userAgent, ipAddress, res);
   }
 
   @ApiOperation({ summary: 'Register a new user' })
