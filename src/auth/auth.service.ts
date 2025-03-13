@@ -13,7 +13,7 @@ import * as crypto from 'crypto';
 import { Response as ExpressResponse } from 'express';
 import { Model, Types } from 'mongoose';
 
-import { ProviderUser } from 'src/common/types/provider-user.type';
+import { AuthProvider, ProviderUser } from 'src/common/types/provider-user.type';
 import { User } from 'src/user/schemas/user.schema';
 
 import { UserService } from '../user/user.service';
@@ -147,20 +147,21 @@ export class AuthService {
     res.json({ message: 'Logged in successfully.' });
   }
 
-  async googleLogin(
-    googleUser: ProviderUser,
+  async loginWithProvider(
+    providerUser: ProviderUser,
+    providerType: AuthProvider,
     userAgent: string,
     ipAddress: string | undefined,
     @Response() res: ExpressResponse,
   ): Promise<void> {
-    let existingUser = await this.userService.findOne(googleUser.email);
+    let existingUser = await this.userService.findOne(providerUser.email);
 
     if (!existingUser) {
-      const newUser = await this.userService.registerWithProvider(googleUser);
+      const newUser = await this.userService.registerWithProvider(providerUser);
       if (newUser) existingUser = newUser;
     }
 
-    if (existingUser && existingUser.provider !== null) {
+    if (existingUser && existingUser.provider === providerType) {
       const payload: JwtPayload = { sub: existingUser._id.toString() };
 
       const accessToken = this.jwtService.sign(payload, {
@@ -195,7 +196,7 @@ export class AuthService {
         30 * 24 * 60 * 60 * 1000,
       );
 
-      res.json({ message: 'Authorized successfully with Google.' });
+      res.json({ message: `Authorized successfully with ${existingUser.provider}.` });
     } else {
       throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }
