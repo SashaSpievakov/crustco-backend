@@ -12,8 +12,8 @@ export class User {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({ required: true })
-  password: string;
+  @Prop({ type: String, required: false, default: null })
+  password: string | null;
 
   @Prop({ required: true })
   firstName: string;
@@ -27,11 +27,17 @@ export class User {
   @Prop({ required: true, default: false })
   emailVerified: boolean;
 
-  @Prop()
+  @Prop({ required: false, default: null })
   verificationCode: string;
 
-  @Prop({ type: Date, default: null })
+  @Prop({ required: false, type: Date, default: null })
   verificationCodeExpiresAt: Date | null;
+
+  @Prop({ required: false, type: String, default: null })
+  provider: string | null;
+
+  @Prop({ required: false, type: String, default: null })
+  photo: string | null;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

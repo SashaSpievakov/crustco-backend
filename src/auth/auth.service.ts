@@ -13,6 +13,7 @@ import * as crypto from 'crypto';
 import { Response as ExpressResponse } from 'express';
 import { Model, Types } from 'mongoose';
 
+import { ProviderUser } from 'src/common/types/provider-user.type';
 import { User } from 'src/user/schemas/user.schema';
 
 import { UserService } from '../user/user.service';
@@ -32,7 +33,12 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.userService.findOne(email);
 
-    if (user && (await bcrypt.compare(password, user.password)) && user.emailVerified) {
+    if (
+      user &&
+      user.password &&
+      (await bcrypt.compare(password, user.password)) &&
+      user.emailVerified
+    ) {
       return user;
     }
 
@@ -45,7 +51,7 @@ export class AuthService {
     firstName: string,
     lastName: string,
   ): Promise<{ message: string }> {
-    await this.userService.create(email, password, firstName, lastName);
+    await this.userService.register(email, password, firstName, lastName);
 
     return {
       message: 'If this email is not registered, you will receive a verification email shortly.',
@@ -139,6 +145,60 @@ export class AuthService {
     );
 
     res.json({ message: 'Logged in successfully.' });
+  }
+
+  async googleLogin(
+    googleUser: ProviderUser,
+    userAgent: string,
+    ipAddress: string | undefined,
+    @Response() res: ExpressResponse,
+  ): Promise<void> {
+    let existingUser = await this.userService.findOne(googleUser.email);
+
+    if (!existingUser) {
+      const newUser = await this.userService.registerWithProvider(googleUser);
+      if (newUser) existingUser = newUser;
+    }
+
+    if (existingUser && existingUser.provider !== null) {
+      const payload: JwtPayload = { sub: existingUser._id.toString() };
+
+      const accessToken = this.jwtService.sign(payload, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+        expiresIn: '10m',
+      });
+
+      const refreshToken = this.jwtService.sign(payload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: '30d',
+      });
+
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 10 * 60 * 1000, // 10 minutes
+      });
+
+      res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      });
+
+      await this.storeRefreshToken(
+        existingUser._id,
+        refreshToken,
+        userAgent,
+        ipAddress,
+        30 * 24 * 60 * 60 * 1000,
+      );
+
+      res.json({ message: 'Authorized successfully with Google.' });
+    } else {
+      throw new UnauthorizedException('Authentication failed. Please check your credentials.');
+    }
   }
 
   async refreshToken(
