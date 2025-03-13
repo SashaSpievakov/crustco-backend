@@ -10,8 +10,10 @@ import bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { Model } from 'mongoose';
 import * as nodemailer from 'nodemailer';
+import { MailOptions } from 'nodemailer/lib/smtp-transport';
 
 import { getVerificationEmailTemplate } from './emails/email-verification.template';
+import { getForgotPasswordTemplate } from './emails/forgot-password.template';
 import { User, UserDocument } from './schemas/user.schema';
 
 @Injectable()
@@ -41,6 +43,15 @@ export class UserService {
     const verificationCodeExpiresAt = new Date();
     verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 10);
 
+    const { text, html } = getVerificationEmailTemplate(firstName, verificationCode);
+    const mailOptions = {
+      from: `"Crustco Support" <${this.configService.get<string>('EMAIL_USER')}>`,
+      to: email,
+      subject: 'Verify Your Email Address - Crustco',
+      text,
+      html,
+    };
+
     const hashedPassword = await bcrypt.hash(password, 12);
 
     if (existingUser) {
@@ -51,7 +62,7 @@ export class UserService {
         existingUser.firstName = firstName;
         existingUser.lastName = lastName;
 
-        await this.sendVerificationEmail(email, verificationCode);
+        await this.sendVerificationEmail(email, verificationCode, mailOptions);
 
         return existingUser.save();
       }
@@ -67,7 +78,7 @@ export class UserService {
         verificationCodeExpiresAt,
       });
 
-      await this.sendVerificationEmail(email, verificationCode);
+      await this.sendVerificationEmail(email, verificationCode, mailOptions);
 
       return newUser.save();
     }
@@ -108,7 +119,57 @@ export class UserService {
     return;
   }
 
-  private async sendVerificationEmail(email: string, verificationCode: string): Promise<void> {
+  async initializeForgotPassword(email: string): Promise<void> {
+    const user = await this.findOne(email);
+    if (user) {
+      const verificationCode = crypto.randomBytes(3).toString('hex');
+      const verificationCodeExpiresAt = new Date();
+      verificationCodeExpiresAt.setMinutes(verificationCodeExpiresAt.getMinutes() + 10);
+
+      const { text, html } = getForgotPasswordTemplate(user.firstName, verificationCode);
+      const mailOptions = {
+        from: `"Crustco Support" <${this.configService.get<string>('EMAIL_USER')}>`,
+        to: email,
+        subject: 'Reset Your Password - Crustco',
+        text,
+        html,
+      };
+
+      user.verificationCode = verificationCode;
+      user.verificationCodeExpiresAt = verificationCodeExpiresAt;
+
+      await this.sendVerificationEmail(email, verificationCode, mailOptions);
+
+      await user.save();
+      return;
+    }
+  }
+
+  async createNewPassword(email: string, code: string, password: string): Promise<User> {
+    const user = await this.findOne(email);
+    const currentTime = new Date();
+
+    if (
+      !user ||
+      user.verificationCode !== code ||
+      (user.verificationCodeExpiresAt && currentTime > user.verificationCodeExpiresAt)
+    ) {
+      throw new BadRequestException('Invalid or expired verification code');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    user.verificationCode = '';
+    user.verificationCodeExpiresAt = null;
+    user.password = hashedPassword;
+
+    return user.save();
+  }
+
+  private async sendVerificationEmail(
+    email: string,
+    verificationCode: string,
+    options: MailOptions,
+  ): Promise<void> {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -117,17 +178,8 @@ export class UserService {
       },
     });
 
-    const { text, html } = getVerificationEmailTemplate(verificationCode);
-    const mailOptions = {
-      from: `"Crustco Support" <${this.configService.get<string>('EMAIL_USER')}>`,
-      to: email,
-      subject: 'Verify Your Email Address - Crustco',
-      text,
-      html,
-    };
-
     try {
-      await transporter.sendMail(mailOptions);
+      await transporter.sendMail(options);
       Logger.log(`Verification email sent to ${email}, ${verificationCode}`, 'UserService');
     } catch (error) {
       Logger.log(`Error sending verification email to ${email}:`, error, 'UserService');
