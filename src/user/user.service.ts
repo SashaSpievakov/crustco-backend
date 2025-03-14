@@ -8,12 +8,13 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as nodemailer from 'nodemailer';
 import { MailOptions } from 'nodemailer/lib/smtp-transport';
 
 import { ProviderUser } from 'src/common/types/provider-user.type';
 
+import { UserUpdateDto } from './dto/user-update.dto';
 import { getVerificationEmailTemplate } from './emails/email-verification.template';
 import { getForgotPasswordTemplate } from './emails/forgot-password.template';
 import { User, UserDocument } from './schemas/user.schema';
@@ -31,6 +32,14 @@ export class UserService {
 
   async findOneById(id: string): Promise<UserDocument | null> {
     return this.userModel.findById(id).exec();
+  }
+
+  async update(id: string, updatedUserReq: UserUpdateDto): Promise<User | null> {
+    const updatedUser = await this.userModel
+      .findOneAndUpdate({ _id: new Types.ObjectId(id) }, updatedUserReq, { new: true })
+      .exec();
+
+    return updatedUser;
   }
 
   async register(

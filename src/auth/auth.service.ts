@@ -18,6 +18,7 @@ import { User } from 'src/user/schemas/user.schema';
 
 import { UserService } from '../user/user.service';
 import { ProfileDto } from './dto/profile.dto';
+import { ProfileUpdateDto } from './dto/profile-update-input.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { Token, TokenDocument } from './schemas/token.schema';
 
@@ -254,6 +255,36 @@ export class AuthService {
         email: user.email,
         roles: user.roles,
         emailVerified: user.emailVerified,
+        twoFactorMethod: user.twoFactorMethod,
+      };
+
+      return safeUser;
+    } catch {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async updateProfile(userId: string, updatedInfo: ProfileUpdateDto): Promise<ProfileDto> {
+    try {
+      const { firstName, lastName, twoFactorMethod } = updatedInfo;
+      const updatedUser = await this.userService.update(userId, {
+        firstName,
+        lastName,
+        twoFactorMethod,
+      });
+
+      if (!updatedUser) {
+        throw new UnauthorizedException('Authentication failed. Please check your credentials.');
+      }
+
+      const safeUser = {
+        _id: updatedUser._id,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+        roles: updatedUser.roles,
+        emailVerified: updatedUser.emailVerified,
+        twoFactorMethod: updatedUser.twoFactorMethod,
       };
 
       return safeUser;

@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 import { Role } from 'src/common/types/role.type';
+import { TwoFactorMethod } from 'src/common/types/twoFactorMethod.type';
 
 export type UserDocument = User & Document;
 
@@ -32,6 +33,9 @@ export class User {
 
   @Prop({ required: false, type: Date, default: null })
   verificationCodeExpiresAt: Date | null;
+
+  @Prop({ required: false, type: String, enum: ['email', 'totp'], default: null })
+  twoFactorMethod: TwoFactorMethod | null;
 
   @Prop({ required: false, type: String, default: null })
   provider: string | null;

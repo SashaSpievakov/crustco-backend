@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   ParseBoolPipe,
+  Patch,
   Post,
   Query,
   Req,
@@ -31,6 +32,7 @@ import { ForgotPasswordInputDto } from './dto/forgot-password-input.dto';
 import { LoginFailedDto } from './dto/login-failed.dto';
 import { LoginInputDto } from './dto/login-input.dto';
 import { ProfileDto } from './dto/profile.dto';
+import { ProfileUpdateDto } from './dto/profile-update-input.dto';
 import { RegisterInputDto } from './dto/register-input.dto';
 import { ResetPasswordInputDto } from './dto/reset-password-input.dto';
 import { VerificationInputDto } from './dto/verification-input.dto';
@@ -222,6 +224,28 @@ export class AuthController {
   @Get('profile')
   async getProfile(@Req() req: AuthenticatedRequest): Promise<ProfileDto> {
     return await this.authService.getProfile(req.user.sub);
+  }
+
+  @ApiOperation({ summary: 'Update the profile' })
+  @ApiBody({ type: ProfileUpdateDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Updated user profile',
+    type: ProfileDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input',
+    type: ValidationErrorResponseDto,
+  })
+  @ApiCookieAuth()
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  async update(
+    @Body() updateProfileBody: ProfileUpdateDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<ProfileDto> {
+    return await this.authService.updateProfile(req.user.sub, updateProfileBody);
   }
 
   @ApiOperation({ summary: 'Reset user password' })
