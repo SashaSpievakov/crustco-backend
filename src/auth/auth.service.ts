@@ -46,6 +46,50 @@ export class AuthService {
     throw new UnauthorizedException('Authentication failed. Please check your credentials.');
   }
 
+  async login(
+    user: User,
+    userAgent: string,
+    ipAddress: string | undefined,
+    @Response() res: ExpressResponse,
+    successMessage: string = 'Logged in successfully.',
+  ): Promise<void> {
+    const payload: JwtPayload = { sub: user._id.toString() };
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn: '10m',
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: '30d',
+    });
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 10 * 60 * 1000, // 10 minutes
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
+    await this.storeRefreshToken(
+      user._id,
+      refreshToken,
+      userAgent,
+      ipAddress,
+      30 * 24 * 60 * 60 * 1000,
+    );
+
+    res.json({ message: successMessage });
+  }
+
   async register(
     email: string,
     password: string,
@@ -68,84 +112,7 @@ export class AuthService {
   ): Promise<void> {
     const user = await this.userService.verifyEmail(email, code);
 
-    const payload: JwtPayload = { sub: user._id.toString() };
-
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '10m',
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: '30d',
-    });
-
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 10 * 60 * 1000, // 10 minutes
-    });
-
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
-
-    await this.storeRefreshToken(
-      user._id,
-      refreshToken,
-      userAgent,
-      ipAddress,
-      30 * 24 * 60 * 60 * 1000,
-    );
-
-    res.json({ message: 'Email verified successfully.' });
-  }
-
-  async login(
-    user: User,
-    userAgent: string,
-    ipAddress: string | undefined,
-    @Response() res: ExpressResponse,
-  ): Promise<void> {
-    const payload: JwtPayload = { sub: user._id.toString() };
-
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '10m',
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: '30d',
-    });
-
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 10 * 60 * 1000, // 10 minutes
-    });
-
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
-
-    await this.storeRefreshToken(
-      user._id,
-      refreshToken,
-      userAgent,
-      ipAddress,
-      30 * 24 * 60 * 60 * 1000,
-    );
-
-    res.json({ message: 'Logged in successfully.' });
+    await this.login(user, userAgent, ipAddress, res, 'Email verified successfully.');
   }
 
   async loginWithProvider(
@@ -163,41 +130,13 @@ export class AuthService {
     }
 
     if (existingUser && existingUser.provider === providerType) {
-      const payload: JwtPayload = { sub: existingUser._id.toString() };
-
-      const accessToken = this.jwtService.sign(payload, {
-        secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: '10m',
-      });
-
-      const refreshToken = this.jwtService.sign(payload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: '30d',
-      });
-
-      res.cookie('access_token', accessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 10 * 60 * 1000, // 10 minutes
-      });
-
-      res.cookie('refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      });
-
-      await this.storeRefreshToken(
-        existingUser._id,
-        refreshToken,
+      await this.login(
+        existingUser,
         userAgent,
         ipAddress,
-        30 * 24 * 60 * 60 * 1000,
+        res,
+        `Authorized successfully with ${existingUser.provider}.`,
       );
-
-      res.json({ message: `Authorized successfully with ${existingUser.provider}.` });
     } else {
       throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }
