@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
+import { AuthProvider } from 'src/common/types/provider-user.type';
 import { Role } from 'src/common/types/role.type';
 import { TwoFactorMethod } from 'src/common/types/twoFactorMethod.type';
 
@@ -38,7 +39,7 @@ export class User {
   twoFactorMethod: TwoFactorMethod | null;
 
   @Prop({ required: false, type: String, default: null })
-  provider: string | null;
+  provider: AuthProvider | null;
 
   @Prop({ required: false, type: String, default: null })
   photo: string | null;

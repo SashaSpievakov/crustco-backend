@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+import { AuthProvider } from 'src/common/types/provider-user.type';
 import { TwoFactorMethod } from 'src/common/types/twoFactorMethod.type';
 
 export class ProfileDto {
@@ -23,6 +24,9 @@ export class ProfileDto {
 
   @ApiProperty({ description: 'Flag if user email is verified', example: true })
   emailVerified: boolean;
+
+  @ApiProperty({ description: '2FA method for the user', example: 'google' })
+  provider: AuthProvider | null;
 
   @ApiProperty({ description: '2FA method for the user', example: 'email' })
   twoFactorMethod: TwoFactorMethod | null;

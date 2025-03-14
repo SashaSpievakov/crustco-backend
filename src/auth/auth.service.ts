@@ -194,6 +194,7 @@ export class AuthService {
         email: user.email,
         roles: user.roles,
         emailVerified: user.emailVerified,
+        provider: user.provider,
         twoFactorMethod: user.twoFactorMethod,
       };
 
@@ -223,6 +224,7 @@ export class AuthService {
         email: updatedUser.email,
         roles: updatedUser.roles,
         emailVerified: updatedUser.emailVerified,
+        provider: updatedUser.provider,
         twoFactorMethod: updatedUser.twoFactorMethod,
       };
 
