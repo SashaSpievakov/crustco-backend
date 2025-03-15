@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   Response,
@@ -19,6 +20,7 @@ import { User } from 'src/user/schemas/user.schema';
 import { UserService } from '../user/user.service';
 import { ProfileDto } from './dto/profile.dto';
 import { ProfileUpdateDto } from './dto/profile-update-input.dto';
+import { VerificationInputDto } from './dto/verification-input.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { Token, TokenDocument } from './schemas/token.schema';
 
@@ -115,6 +117,14 @@ export class AuthService {
     await this.login(user, userAgent, ipAddress, res, 'Email verified successfully.');
   }
 
+  async verify2FA(verificationBody: VerificationInputDto): Promise<User> {
+    const user = await this.userService.verify2FACode(
+      verificationBody.email,
+      verificationBody.code,
+    );
+    return user;
+  }
+
   async loginWithProvider(
     providerUser: ProviderUser,
     providerType: AuthProvider,
@@ -130,6 +140,16 @@ export class AuthService {
     }
 
     if (existingUser && existingUser.provider === providerType) {
+      if (existingUser.twoFactorMethod) {
+        await this.request2FA(existingUser.email);
+
+        res.status(HttpStatus.ACCEPTED).json({
+          message: 'Two-factor authentication required.',
+          method: existingUser.twoFactorMethod,
+        });
+        return;
+      }
+
       await this.login(
         existingUser,
         userAgent,
@@ -250,6 +270,11 @@ export class AuthService {
       await this.userService.initializeForgotPassword(email);
       return;
     }
+  }
+
+  async request2FA(email: string): Promise<void> {
+    await this.userService.initialize2FA(email);
+    return;
   }
 
   async logout(

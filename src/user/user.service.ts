@@ -15,6 +15,7 @@ import { MailOptions } from 'nodemailer/lib/smtp-transport';
 import { ProviderUser } from 'src/common/types/provider-user.type';
 
 import { UserUpdateDto } from './dto/user-update.dto';
+import { getTwoFactorAuthTemplate } from './emails/2fa-verification.template';
 import { getVerificationEmailTemplate } from './emails/email-verification.template';
 import { getForgotPasswordTemplate } from './emails/forgot-password.template';
 import { User, UserDocument } from './schemas/user.schema';
@@ -192,6 +193,61 @@ export class UserService {
     user.password = hashedPassword;
 
     return user.save();
+  }
+
+  async initialize2FA(email: string): Promise<void> {
+    const user = await this.findOne(email);
+
+    if (user && user.twoFactorMethod === 'email') {
+      const expirationMinutes: number = 5;
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const verificationCodeExpiresAt = new Date();
+      verificationCodeExpiresAt.setMinutes(
+        verificationCodeExpiresAt.getMinutes() + expirationMinutes,
+      );
+
+      const { text, html } = getTwoFactorAuthTemplate(
+        user.firstName,
+        verificationCode,
+        expirationMinutes,
+      );
+      const mailOptions = {
+        from: `"Crustco Support" <${this.configService.get<string>('EMAIL_USER')}>`,
+        to: email,
+        subject: 'Your 2FA Code for Crustco Login',
+        text,
+        html,
+      };
+
+      user.verificationCode = verificationCode;
+      user.verificationCodeExpiresAt = verificationCodeExpiresAt;
+
+      await this.sendVerificationEmail(email, verificationCode, mailOptions);
+
+      await user.save();
+      return;
+    } else {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async verify2FACode(email: string, code: string): Promise<User> {
+    const user = await this.findOne(email);
+    const currentTime = new Date();
+
+    if (
+      !user ||
+      user.verificationCode !== code ||
+      (user.verificationCodeExpiresAt && currentTime > user.verificationCodeExpiresAt)
+    ) {
+      throw new BadRequestException('Invalid or expired verification code');
+    }
+
+    user.verificationCode = '';
+    user.verificationCodeExpiresAt = null;
+    await user.save();
+
+    return user;
   }
 
   private async sendVerificationEmail(

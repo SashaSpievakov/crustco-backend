@@ -35,6 +35,7 @@ import { ProfileDto } from './dto/profile.dto';
 import { ProfileUpdateDto } from './dto/profile-update-input.dto';
 import { RegisterInputDto } from './dto/register-input.dto';
 import { ResetPasswordInputDto } from './dto/reset-password-input.dto';
+import { Success2FARequestDto } from './dto/success-2fa-request.dto';
 import { VerificationInputDto } from './dto/verification-input.dto';
 
 @ApiTags('Auth')
@@ -48,6 +49,11 @@ export class AuthController {
     status: 200,
     description: 'Logged in successfully',
     type: RequestSuccessDto,
+  })
+  @ApiResponse({
+    status: 202,
+    description: 'Two-factor authentication required',
+    type: Success2FARequestDto,
   })
   @ApiResponse({
     status: 400,
@@ -65,11 +71,52 @@ export class AuthController {
     @Body() loginBody: LoginInputDto,
     @Req() req: Request,
     @Res() res: Response,
-  ): Promise<RequestSuccessDto | void> {
+  ): Promise<RequestSuccessDto | Success2FARequestDto | void> {
     const userAgent = req.headers['user-agent'] || 'Unknown';
     const ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
 
     const user = await this.authService.validateUser(loginBody.email, loginBody.password);
+
+    if (user.twoFactorMethod) {
+      await this.authService.request2FA(user.email);
+
+      res.status(HttpStatus.ACCEPTED).json({
+        message: 'Two-factor authentication required.',
+        method: user.twoFactorMethod,
+      });
+      return;
+    }
+
+    return this.authService.login(user, userAgent, ipAddress, res);
+  }
+
+  @ApiOperation({
+    summary: 'Verify Two-Factor Authentication (2FA) Code',
+    description: 'Validates the provided 2FA code and grants access if the code is correct.',
+  })
+  @ApiBody({ type: VerificationInputDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Logged in successfully',
+    type: RequestSuccessDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input',
+    type: ValidationErrorResponseDto,
+  })
+  @Post('verify-2fa')
+  @HttpCode(HttpStatus.OK)
+  async verify2FA(
+    @Body() verificationBody: VerificationInputDto,
+    @Req() req: Request,
+    @Res() res: Response,
+  ): Promise<RequestSuccessDto | void> {
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+
+    const user = await this.authService.verify2FA(verificationBody);
+
     return this.authService.login(user, userAgent, ipAddress, res);
   }
 
@@ -92,6 +139,11 @@ export class AuthController {
     type: RequestSuccessDto,
   })
   @ApiResponse({
+    status: 202,
+    description: 'Two-factor authentication required',
+    type: Success2FARequestDto,
+  })
+  @ApiResponse({
     status: 401,
     description: 'Unauthorized',
     type: UnauthorizedErrorResponseDto,
@@ -101,7 +153,7 @@ export class AuthController {
   async googleAuthRedirect(
     @Req() req: GoogleAuthenticatedRequest,
     @Res() res: Response,
-  ): Promise<void> {
+  ): Promise<RequestSuccessDto | Success2FARequestDto | void> {
     const userAgent = req.headers['user-agent'] || 'Unknown';
     const ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
 
@@ -127,6 +179,11 @@ export class AuthController {
     type: RequestSuccessDto,
   })
   @ApiResponse({
+    status: 202,
+    description: 'Two-factor authentication required',
+    type: Success2FARequestDto,
+  })
+  @ApiResponse({
     status: 401,
     description: 'Unauthorized',
     type: UnauthorizedErrorResponseDto,
@@ -136,7 +193,7 @@ export class AuthController {
   async githubAuthRedirect(
     @Req() req: GoogleAuthenticatedRequest,
     @Res() res: Response,
-  ): Promise<void> {
+  ): Promise<RequestSuccessDto | Success2FARequestDto | void> {
     const userAgent = req.headers['user-agent'] || 'Unknown';
     const ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
 
