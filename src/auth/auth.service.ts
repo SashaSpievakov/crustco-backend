@@ -13,6 +13,8 @@ import bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { Response as ExpressResponse } from 'express';
 import { Model, Types } from 'mongoose';
+import { authenticator } from 'otplib';
+import * as qrcode from 'qrcode';
 
 import { AuthProvider, ProviderUser } from 'src/common/types/provider-user.type';
 import { User } from 'src/user/schemas/user.schema';
@@ -20,6 +22,7 @@ import { User } from 'src/user/schemas/user.schema';
 import { UserService } from '../user/user.service';
 import { ProfileDto } from './dto/profile.dto';
 import { ProfileUpdateDto } from './dto/profile-update-input.dto';
+import { TotpGenerateSuccessDto } from './dto/totp-generate-success.dto';
 import { VerificationInputDto } from './dto/verification-input.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { Token, TokenDocument } from './schemas/token.schema';
@@ -160,6 +163,19 @@ export class AuthService {
     } else {
       throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }
+  }
+
+  async generateTotp(userId: string): Promise<TotpGenerateSuccessDto> {
+    const user = await this.userService.findOneById(userId);
+    if (!user) {
+      throw new InternalServerErrorException();
+    }
+
+    const secret = authenticator.generateSecret();
+    const otpAuthUrl = authenticator.keyuri(user?.email, 'Crustco', secret);
+    const qrCodeUrl = await qrcode.toDataURL(otpAuthUrl);
+
+    return { qrCodeUrl, secret };
   }
 
   async refreshToken(

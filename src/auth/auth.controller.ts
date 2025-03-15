@@ -36,6 +36,7 @@ import { ProfileUpdateDto } from './dto/profile-update-input.dto';
 import { RegisterInputDto } from './dto/register-input.dto';
 import { ResetPasswordInputDto } from './dto/reset-password-input.dto';
 import { Success2FARequestDto } from './dto/success-2fa-request.dto';
+import { TotpGenerateSuccessDto } from './dto/totp-generate-success.dto';
 import { VerificationInputDto } from './dto/verification-input.dto';
 
 @ApiTags('Auth')
@@ -118,6 +119,19 @@ export class AuthController {
     const user = await this.authService.verify2FA(verificationBody);
 
     return this.authService.login(user, userAgent, ipAddress, res);
+  }
+
+  @ApiOperation({ summary: 'Generate TOTP' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully generated TOTP secret and QR code URL',
+    type: TotpGenerateSuccessDto,
+  })
+  @ApiCookieAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('totp-generate')
+  async generateTOTP(@Req() req: AuthenticatedRequest): Promise<TotpGenerateSuccessDto> {
+    return await this.authService.generateTotp(req.user.sub);
   }
 
   @ApiOperation({
