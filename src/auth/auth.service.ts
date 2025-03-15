@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpStatus,
   Injectable,
   InternalServerErrorException,
   Response,
@@ -13,11 +14,13 @@ import * as crypto from 'crypto';
 import { Response as ExpressResponse } from 'express';
 import { Model, Types } from 'mongoose';
 
-import { ProviderUser } from 'src/common/types/provider-user.type';
+import { AuthProvider, ProviderUser } from 'src/common/types/provider-user.type';
 import { User } from 'src/user/schemas/user.schema';
 
 import { UserService } from '../user/user.service';
 import { ProfileDto } from './dto/profile.dto';
+import { ProfileUpdateDto } from './dto/profile-update-input.dto';
+import { VerificationInputDto } from './dto/verification-input.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { Token, TokenDocument } from './schemas/token.schema';
 
@@ -45,6 +48,50 @@ export class AuthService {
     throw new UnauthorizedException('Authentication failed. Please check your credentials.');
   }
 
+  async login(
+    user: User,
+    userAgent: string,
+    ipAddress: string | undefined,
+    @Response() res: ExpressResponse,
+    successMessage: string = 'Logged in successfully.',
+  ): Promise<void> {
+    const payload: JwtPayload = { sub: user._id.toString() };
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn: '10m',
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: '30d',
+    });
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 10 * 60 * 1000, // 10 minutes
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
+    await this.storeRefreshToken(
+      user._id,
+      refreshToken,
+      userAgent,
+      ipAddress,
+      30 * 24 * 60 * 60 * 1000,
+    );
+
+    res.json({ message: successMessage });
+  }
+
   async register(
     email: string,
     password: string,
@@ -67,135 +114,49 @@ export class AuthService {
   ): Promise<void> {
     const user = await this.userService.verifyEmail(email, code);
 
-    const payload: JwtPayload = { sub: user._id.toString() };
-
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '10m',
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: '30d',
-    });
-
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 10 * 60 * 1000, // 10 minutes
-    });
-
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
-
-    await this.storeRefreshToken(
-      user._id,
-      refreshToken,
-      userAgent,
-      ipAddress,
-      30 * 24 * 60 * 60 * 1000,
-    );
-
-    res.json({ message: 'Email verified successfully.' });
+    await this.login(user, userAgent, ipAddress, res, 'Email verified successfully.');
   }
 
-  async login(
-    user: User,
+  async verify2FA(verificationBody: VerificationInputDto): Promise<User> {
+    const user = await this.userService.verify2FACode(
+      verificationBody.email,
+      verificationBody.code,
+    );
+    return user;
+  }
+
+  async loginWithProvider(
+    providerUser: ProviderUser,
+    providerType: AuthProvider,
     userAgent: string,
     ipAddress: string | undefined,
     @Response() res: ExpressResponse,
   ): Promise<void> {
-    const payload: JwtPayload = { sub: user._id.toString() };
-
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '10m',
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: '30d',
-    });
-
-    res.cookie('access_token', accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 10 * 60 * 1000, // 10 minutes
-    });
-
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    });
-
-    await this.storeRefreshToken(
-      user._id,
-      refreshToken,
-      userAgent,
-      ipAddress,
-      30 * 24 * 60 * 60 * 1000,
-    );
-
-    res.json({ message: 'Logged in successfully.' });
-  }
-
-  async googleLogin(
-    googleUser: ProviderUser,
-    userAgent: string,
-    ipAddress: string | undefined,
-    @Response() res: ExpressResponse,
-  ): Promise<void> {
-    let existingUser = await this.userService.findOne(googleUser.email);
+    let existingUser = await this.userService.findOne(providerUser.email);
 
     if (!existingUser) {
-      const newUser = await this.userService.registerWithProvider(googleUser);
+      const newUser = await this.userService.registerWithProvider(providerUser);
       if (newUser) existingUser = newUser;
     }
 
-    if (existingUser && existingUser.provider !== null) {
-      const payload: JwtPayload = { sub: existingUser._id.toString() };
+    if (existingUser && existingUser.provider === providerType) {
+      if (existingUser.twoFactorMethod) {
+        await this.request2FA(existingUser.email);
 
-      const accessToken = this.jwtService.sign(payload, {
-        secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: '10m',
-      });
+        res.status(HttpStatus.ACCEPTED).json({
+          message: 'Two-factor authentication required.',
+          method: existingUser.twoFactorMethod,
+        });
+        return;
+      }
 
-      const refreshToken = this.jwtService.sign(payload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: '30d',
-      });
-
-      res.cookie('access_token', accessToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 10 * 60 * 1000, // 10 minutes
-      });
-
-      res.cookie('refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      });
-
-      await this.storeRefreshToken(
-        existingUser._id,
-        refreshToken,
+      await this.login(
+        existingUser,
         userAgent,
         ipAddress,
-        30 * 24 * 60 * 60 * 1000,
+        res,
+        `Authorized successfully with ${existingUser.provider}.`,
       );
-
-      res.json({ message: 'Authorized successfully with Google.' });
     } else {
       throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }
@@ -253,6 +214,38 @@ export class AuthService {
         email: user.email,
         roles: user.roles,
         emailVerified: user.emailVerified,
+        provider: user.provider,
+        twoFactorMethod: user.twoFactorMethod,
+      };
+
+      return safeUser;
+    } catch {
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async updateProfile(userId: string, updatedInfo: ProfileUpdateDto): Promise<ProfileDto> {
+    try {
+      const { firstName, lastName, twoFactorMethod } = updatedInfo;
+      const updatedUser = await this.userService.update(userId, {
+        firstName,
+        lastName,
+        twoFactorMethod,
+      });
+
+      if (!updatedUser) {
+        throw new UnauthorizedException('Authentication failed. Please check your credentials.');
+      }
+
+      const safeUser = {
+        _id: updatedUser._id,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+        roles: updatedUser.roles,
+        emailVerified: updatedUser.emailVerified,
+        provider: updatedUser.provider,
+        twoFactorMethod: updatedUser.twoFactorMethod,
       };
 
       return safeUser;
@@ -277,6 +270,11 @@ export class AuthService {
       await this.userService.initializeForgotPassword(email);
       return;
     }
+  }
+
+  async request2FA(email: string): Promise<void> {
+    await this.userService.initialize2FA(email);
+    return;
   }
 
   async logout(

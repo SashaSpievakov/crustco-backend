@@ -8,7 +8,7 @@ export class VerificationInputDto {
   email: string;
 
   @ApiProperty({
-    description: "The verification code sent to user's email",
+    description: 'Verification code',
     example: 'd3e72e',
   })
   @IsNotEmpty()
