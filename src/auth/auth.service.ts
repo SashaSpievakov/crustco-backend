@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   HttpStatus,
   Injectable,
   InternalServerErrorException,
@@ -176,6 +177,27 @@ export class AuthService {
     const qrCodeUrl = await qrcode.toDataURL(otpAuthUrl);
 
     return { qrCodeUrl, secret };
+  }
+
+  async enableTotpVerification(userId: string, token: string, secret: string): Promise<void> {
+    const user = await this.userService.findOneById(userId);
+    if (!user) {
+      throw new InternalServerErrorException();
+    }
+    if (user.totpEnabled) {
+      throw new ConflictException('TOTP authentication is already enabled.');
+    }
+
+    const totpValidated = authenticator.verify({ token, secret });
+    if (!totpValidated) {
+      throw new BadRequestException('Invalid or expired totp token');
+    }
+
+    const hashedSecret = await bcrypt.hash(secret, 12);
+    user.totpSecret = hashedSecret;
+    user.totpEnabled = true;
+    await user.save();
+    return;
   }
 
   async refreshToken(

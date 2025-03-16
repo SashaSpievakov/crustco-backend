@@ -18,6 +18,7 @@ import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 
 import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
+import { ConflictErrorResponseDto } from 'src/common/dto/conflict-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { UnauthorizedErrorResponseDto } from 'src/common/dto/unauthorized-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
@@ -36,6 +37,7 @@ import { ProfileUpdateDto } from './dto/profile-update-input.dto';
 import { RegisterInputDto } from './dto/register-input.dto';
 import { ResetPasswordInputDto } from './dto/reset-password-input.dto';
 import { Success2FARequestDto } from './dto/success-2fa-request.dto';
+import { TotpEnableInputDto } from './dto/totp-enable-input.dto';
 import { TotpGenerateSuccessDto } from './dto/totp-generate-success.dto';
 import { VerificationInputDto } from './dto/verification-input.dto';
 
@@ -132,6 +134,35 @@ export class AuthController {
   @Get('totp-generate')
   async generateTOTP(@Req() req: AuthenticatedRequest): Promise<TotpGenerateSuccessDto> {
     return await this.authService.generateTotp(req.user.sub);
+  }
+
+  @ApiOperation({ summary: 'Enable TOTP' })
+  @ApiBody({ type: TotpEnableInputDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully enabled TOTP verification',
+    type: RequestSuccessDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input',
+    type: ValidationErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'TOTP is already enabled for this user',
+    type: ConflictErrorResponseDto,
+  })
+  @ApiCookieAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('totp-enable')
+  @HttpCode(HttpStatus.OK)
+  async enableTOTP(
+    @Body() totpBody: TotpEnableInputDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<RequestSuccessDto> {
+    await this.authService.enableTotpVerification(req.user.sub, totpBody.token, totpBody.secret);
+    return { message: 'TOTP authentication successfully enabled.' };
   }
 
   @ApiOperation({
