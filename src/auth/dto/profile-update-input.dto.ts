@@ -1,8 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 
-import { TwoFactorMethod } from 'src/common/types/twoFactorMethod.type';
-
 export class ProfileUpdateDto {
   @ApiProperty({
     description: "User's first name",
@@ -25,10 +23,10 @@ export class ProfileUpdateDto {
   @ApiProperty({
     description: '2FA method',
     example: 'email',
-    enum: ['email', 'totp'],
+    enum: ['email'],
     required: false,
   })
-  @IsIn(['email', 'totp'])
+  @IsIn(['email'])
   @IsOptional()
-  twoFactorMethod?: TwoFactorMethod;
+  twoFactorMethod?: 'email' | null;
 }
