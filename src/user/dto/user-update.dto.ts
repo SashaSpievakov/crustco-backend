@@ -29,5 +29,5 @@ export class UserUpdateDto {
   })
   @IsArray()
   @IsOptional()
-  twoFactorMethod?: TwoFactorMethod;
+  twoFactorMethod?: TwoFactorMethod | null;
 }

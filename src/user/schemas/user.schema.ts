@@ -35,11 +35,17 @@ export class User {
   @Prop({ required: false, type: Date, default: null })
   verificationCodeExpiresAt: Date | null;
 
+  @Prop({ required: false, type: String, default: null })
+  provider: AuthProvider | null;
+
   @Prop({ required: false, type: String, enum: ['email', 'totp'], default: null })
   twoFactorMethod: TwoFactorMethod | null;
 
   @Prop({ required: false, type: String, default: null })
-  provider: AuthProvider | null;
+  totpSecret: string | null;
+
+  @Prop({ required: false, type: Boolean, default: null })
+  totpEnabled: boolean | null;
 
   @Prop({ required: false, type: String, default: null })
   photo: string | null;
