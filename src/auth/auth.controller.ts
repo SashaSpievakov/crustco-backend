@@ -347,7 +347,8 @@ export class AuthController {
     @Body() updateProfileBody: ProfileUpdateDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<ProfileDto> {
-    return await this.authService.updateProfile(req.user.sub, updateProfileBody);
+    const updatedProfile = await this.authService.updateProfile(req.user.sub, updateProfileBody);
+    return updatedProfile;
   }
 
   @ApiOperation({ summary: 'Reset user password' })

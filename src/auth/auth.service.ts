@@ -194,6 +194,7 @@ export class AuthService {
     }
 
     const hashedSecret = await bcrypt.hash(secret, 12);
+    user.twoFactorMethod = 'totp';
     user.totpSecret = hashedSecret;
     user.totpEnabled = true;
     await user.save();
@@ -239,57 +240,57 @@ export class AuthService {
   }
 
   async getProfile(userId: string): Promise<ProfileDto> {
-    try {
-      const user = await this.userService.findOneById(userId);
-      if (!user) {
-        throw new UnauthorizedException('Authentication failed. Please check your credentials.');
-      }
-
-      const safeUser = {
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        roles: user.roles,
-        emailVerified: user.emailVerified,
-        provider: user.provider,
-        twoFactorMethod: user.twoFactorMethod,
-      };
-
-      return safeUser;
-    } catch {
-      throw new InternalServerErrorException();
+    const user = await this.userService.findOneById(userId);
+    if (!user) {
+      throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }
+
+    const safeUser = {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      roles: user.roles,
+      emailVerified: user.emailVerified,
+      provider: user.provider,
+      twoFactorMethod: user.twoFactorMethod,
+      totpEnabled: user.totpEnabled,
+    };
+
+    return safeUser;
   }
 
   async updateProfile(userId: string, updatedInfo: ProfileUpdateDto): Promise<ProfileDto> {
-    try {
-      const { firstName, lastName, twoFactorMethod } = updatedInfo;
-      const updatedUser = await this.userService.update(userId, {
-        firstName,
-        lastName,
-        twoFactorMethod,
-      });
+    const user = await this.userService.findOneById(userId);
+    const { firstName, lastName, twoFactorMethod } = updatedInfo;
 
-      if (!updatedUser) {
-        throw new UnauthorizedException('Authentication failed. Please check your credentials.');
-      }
-
-      const safeUser = {
-        _id: updatedUser._id,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
-        email: updatedUser.email,
-        roles: updatedUser.roles,
-        emailVerified: updatedUser.emailVerified,
-        provider: updatedUser.provider,
-        twoFactorMethod: updatedUser.twoFactorMethod,
-      };
-
-      return safeUser;
-    } catch {
-      throw new InternalServerErrorException();
+    if (user?.totpEnabled && twoFactorMethod) {
+      throw new BadRequestException('Cannot update 2fa method when totp is enabled.');
     }
+
+    const updatedUser = await this.userService.update(userId, {
+      firstName,
+      lastName,
+      twoFactorMethod,
+    });
+
+    if (!updatedUser) {
+      throw new UnauthorizedException('Authentication failed. Please check your credentials.');
+    }
+
+    const safeUser = {
+      _id: updatedUser._id,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      email: updatedUser.email,
+      roles: updatedUser.roles,
+      emailVerified: updatedUser.emailVerified,
+      provider: updatedUser.provider,
+      twoFactorMethod: updatedUser.twoFactorMethod,
+      totpEnabled: updatedUser.totpEnabled,
+    };
+
+    return safeUser;
   }
 
   async resetPassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
