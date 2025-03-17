@@ -193,10 +193,32 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired totp token');
     }
 
-    const hashedSecret = await bcrypt.hash(secret, 12);
+    const encryptedSecret = this.encryptSecret(secret);
     user.twoFactorMethod = 'totp';
-    user.totpSecret = hashedSecret;
+    user.totpSecret = encryptedSecret;
     user.totpEnabled = true;
+    await user.save();
+    return;
+  }
+
+  async disableTotpVerification(userId: string, token: string): Promise<void> {
+    const user = await this.userService.findOneById(userId);
+    if (!user) {
+      throw new InternalServerErrorException();
+    }
+    if (!user.totpEnabled || !user.totpSecret) {
+      throw new ConflictException('TOTP is not enabled for this user.');
+    }
+
+    const decryptedSecret = this.decryptSecret(user.totpSecret);
+    const totpValidated = authenticator.verify({ token, secret: decryptedSecret });
+    if (!totpValidated) {
+      throw new BadRequestException('Invalid or expired totp token');
+    }
+
+    user.twoFactorMethod = null;
+    user.totpSecret = null;
+    user.totpEnabled = false;
     await user.save();
     return;
   }
@@ -365,6 +387,33 @@ export class AuthService {
 
   private compareToken(token: string, hash: string): boolean {
     return this.hashToken(token) === hash;
+  }
+
+  private encryptSecret(secret: string): string {
+    const key = Buffer.from(this.configService.get<string>('TOTP_SECRET_KEY') || '', 'hex');
+    if (key.length !== 32) {
+      throw new Error('The encryption key must be 32 bytes long.');
+    }
+
+    const iv = Buffer.from('1234567890123456');
+    const cipher = crypto.createCipheriv('aes-256-ctr', key, iv);
+    let encrypted = cipher.update(secret, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return encrypted;
+  }
+
+  private decryptSecret(encryptedSecret: string): string {
+    const key = Buffer.from(this.configService.get<string>('TOTP_SECRET_KEY') || '', 'hex');
+    if (key.length !== 32) {
+      throw new Error('The encryption key must be 32 bytes long.');
+    }
+
+    const iv = Buffer.from('1234567890123456');
+    const decipher = crypto.createDecipheriv('aes-256-ctr', key, iv);
+
+    let decrypted = decipher.update(encryptedSecret, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
   }
 
   private async storeRefreshToken(

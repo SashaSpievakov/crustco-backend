@@ -37,6 +37,7 @@ import { ProfileUpdateDto } from './dto/profile-update-input.dto';
 import { RegisterInputDto } from './dto/register-input.dto';
 import { ResetPasswordInputDto } from './dto/reset-password-input.dto';
 import { Success2FARequestDto } from './dto/success-2fa-request.dto';
+import { TotpDisableInputDto } from './dto/totp-disable-input.dto';
 import { TotpEnableInputDto } from './dto/totp-enable-input.dto';
 import { TotpGenerateSuccessDto } from './dto/totp-generate-success.dto';
 import { VerificationInputDto } from './dto/verification-input.dto';
@@ -163,6 +164,35 @@ export class AuthController {
   ): Promise<RequestSuccessDto> {
     await this.authService.enableTotpVerification(req.user.sub, totpBody.token, totpBody.secret);
     return { message: 'TOTP authentication successfully enabled.' };
+  }
+
+  @ApiOperation({ summary: 'Disable TOTP' })
+  @ApiBody({ type: TotpDisableInputDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully disabled TOTP verification',
+    type: RequestSuccessDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input',
+    type: ValidationErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'TOTP is not enabled for this user',
+    type: ConflictErrorResponseDto,
+  })
+  @ApiCookieAuth()
+  @UseGuards(JwtAuthGuard)
+  @Post('totp-disable')
+  @HttpCode(HttpStatus.OK)
+  async disableTOTP(
+    @Body() totpBody: TotpDisableInputDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<RequestSuccessDto> {
+    await this.authService.disableTotpVerification(req.user.sub, totpBody.token);
+    return { message: 'TOTP authentication successfully disabled.' };
   }
 
   @ApiOperation({
