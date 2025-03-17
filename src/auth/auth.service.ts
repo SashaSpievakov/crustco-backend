@@ -18,13 +18,13 @@ import { authenticator } from 'otplib';
 import * as qrcode from 'qrcode';
 
 import { AuthProvider, ProviderUser } from 'src/common/types/provider-user.type';
+import { TwoFactorMethod } from 'src/common/types/twoFactorMethod.type';
 import { User } from 'src/user/schemas/user.schema';
 
 import { UserService } from '../user/user.service';
 import { ProfileDto } from './dto/profile.dto';
 import { ProfileUpdateDto } from './dto/profile-update-input.dto';
 import { TotpGenerateSuccessDto } from './dto/totp-generate-success.dto';
-import { VerificationInputDto } from './dto/verification-input.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { Token, TokenDocument } from './schemas/token.schema';
 
@@ -63,7 +63,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '10m',
+      expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXP_TIME'),
     });
 
     const refreshToken = this.jwtService.sign(payload, {
@@ -121,12 +121,29 @@ export class AuthService {
     await this.login(user, userAgent, ipAddress, res, 'Email verified successfully.');
   }
 
-  async verify2FA(verificationBody: VerificationInputDto): Promise<User> {
-    const user = await this.userService.verify2FACode(
-      verificationBody.email,
-      verificationBody.code,
-    );
+  async verifyEmail2FA(email: string, code: string): Promise<User> {
+    const user = await this.userService.verifyEmail2FA(email, code);
     return user;
+  }
+
+  async verifyTotp2FA(email: string, token: string): Promise<User> {
+    const user = await this.userService.findOne(email);
+
+    if (!user || !user.totpEnabled || !user.totpSecret || !user.totp2FAStarted) {
+      throw new BadRequestException('Invalid or expired totp token');
+    }
+
+    const decryptedSecret = this.decryptSecret(user.totpSecret);
+    const totpValidated = authenticator.verify({
+      token: token,
+      secret: decryptedSecret,
+    });
+    if (!totpValidated) {
+      throw new BadRequestException('Invalid or expired totp token');
+    }
+
+    user.totp2FAStarted = false;
+    return await user.save();
   }
 
   async loginWithProvider(
@@ -145,7 +162,7 @@ export class AuthService {
 
     if (existingUser && existingUser.provider === providerType) {
       if (existingUser.twoFactorMethod) {
-        await this.request2FA(existingUser.email);
+        await this.request2FA(existingUser._id, existingUser.twoFactorMethod);
 
         res.status(HttpStatus.ACCEPTED).json({
           message: 'Two-factor authentication required.',
@@ -193,9 +210,32 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired totp token');
     }
 
-    const hashedSecret = await bcrypt.hash(secret, 12);
-    user.totpSecret = hashedSecret;
+    const encryptedSecret = this.encryptSecret(secret);
+    user.twoFactorMethod = 'totp';
+    user.totpSecret = encryptedSecret;
     user.totpEnabled = true;
+    await user.save();
+    return;
+  }
+
+  async disableTotpVerification(userId: string, token: string): Promise<void> {
+    const user = await this.userService.findOneById(userId);
+    if (!user) {
+      throw new InternalServerErrorException();
+    }
+    if (!user.totpEnabled || !user.totpSecret) {
+      throw new ConflictException('TOTP is not enabled for this user.');
+    }
+
+    const decryptedSecret = this.decryptSecret(user.totpSecret);
+    const totpValidated = authenticator.verify({ token, secret: decryptedSecret });
+    if (!totpValidated) {
+      throw new BadRequestException('Invalid or expired totp token');
+    }
+
+    user.twoFactorMethod = null;
+    user.totpSecret = null;
+    user.totpEnabled = false;
     await user.save();
     return;
   }
@@ -222,7 +262,10 @@ export class AuthService {
 
       const newAccessToken = this.jwtService.sign(
         { email: user.email, sub: user._id.toString() },
-        { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '10m' },
+        {
+          secret: this.configService.get<string>('JWT_SECRET'),
+          expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXP_TIME'),
+        },
       );
 
       res.cookie('access_token', newAccessToken, {
@@ -239,57 +282,57 @@ export class AuthService {
   }
 
   async getProfile(userId: string): Promise<ProfileDto> {
-    try {
-      const user = await this.userService.findOneById(userId);
-      if (!user) {
-        throw new UnauthorizedException('Authentication failed. Please check your credentials.');
-      }
-
-      const safeUser = {
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        roles: user.roles,
-        emailVerified: user.emailVerified,
-        provider: user.provider,
-        twoFactorMethod: user.twoFactorMethod,
-      };
-
-      return safeUser;
-    } catch {
-      throw new InternalServerErrorException();
+    const user = await this.userService.findOneById(userId);
+    if (!user) {
+      throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }
+
+    const safeUser = {
+      _id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      roles: user.roles,
+      emailVerified: user.emailVerified,
+      provider: user.provider,
+      twoFactorMethod: user.twoFactorMethod,
+      totpEnabled: user.totpEnabled,
+    };
+
+    return safeUser;
   }
 
   async updateProfile(userId: string, updatedInfo: ProfileUpdateDto): Promise<ProfileDto> {
-    try {
-      const { firstName, lastName, twoFactorMethod } = updatedInfo;
-      const updatedUser = await this.userService.update(userId, {
-        firstName,
-        lastName,
-        twoFactorMethod,
-      });
+    const user = await this.userService.findOneById(userId);
+    const { firstName, lastName, twoFactorMethod } = updatedInfo;
 
-      if (!updatedUser) {
-        throw new UnauthorizedException('Authentication failed. Please check your credentials.');
-      }
-
-      const safeUser = {
-        _id: updatedUser._id,
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
-        email: updatedUser.email,
-        roles: updatedUser.roles,
-        emailVerified: updatedUser.emailVerified,
-        provider: updatedUser.provider,
-        twoFactorMethod: updatedUser.twoFactorMethod,
-      };
-
-      return safeUser;
-    } catch {
-      throw new InternalServerErrorException();
+    if (user?.totpEnabled && twoFactorMethod !== undefined) {
+      throw new BadRequestException('Cannot update 2fa method when totp is enabled.');
     }
+
+    const updatedUser = await this.userService.update(userId, {
+      firstName,
+      lastName,
+      twoFactorMethod,
+    });
+
+    if (!updatedUser) {
+      throw new UnauthorizedException('Authentication failed. Please check your credentials.');
+    }
+
+    const safeUser = {
+      _id: updatedUser._id,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      email: updatedUser.email,
+      roles: updatedUser.roles,
+      emailVerified: updatedUser.emailVerified,
+      provider: updatedUser.provider,
+      twoFactorMethod: updatedUser.twoFactorMethod,
+      totpEnabled: updatedUser.totpEnabled,
+    };
+
+    return safeUser;
   }
 
   async resetPassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
@@ -310,8 +353,14 @@ export class AuthService {
     }
   }
 
-  async request2FA(email: string): Promise<void> {
-    await this.userService.initialize2FA(email);
+  async request2FA(userId: string, method: TwoFactorMethod): Promise<void> {
+    if (method === 'email') {
+      await this.userService.initialize2FA(userId);
+    } else if (method === 'totp') {
+      await this.userService.update(userId, {
+        totp2FAStarted: true,
+      });
+    }
     return;
   }
 
@@ -364,6 +413,33 @@ export class AuthService {
 
   private compareToken(token: string, hash: string): boolean {
     return this.hashToken(token) === hash;
+  }
+
+  private encryptSecret(secret: string): string {
+    const key = Buffer.from(this.configService.get<string>('TOTP_SECRET_KEY') || '', 'hex');
+    if (key.length !== 32) {
+      throw new Error('The encryption key must be 32 bytes long.');
+    }
+
+    const iv = Buffer.from('1234567890123456');
+    const cipher = crypto.createCipheriv('aes-256-ctr', key, iv);
+    let encrypted = cipher.update(secret, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    return encrypted;
+  }
+
+  private decryptSecret(encryptedSecret: string): string {
+    const key = Buffer.from(this.configService.get<string>('TOTP_SECRET_KEY') || '', 'hex');
+    if (key.length !== 32) {
+      throw new Error('The encryption key must be 32 bytes long.');
+    }
+
+    const iv = Buffer.from('1234567890123456');
+    const decipher = crypto.createDecipheriv('aes-256-ctr', key, iv);
+
+    let decrypted = decipher.update(encryptedSecret, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
   }
 
   private async storeRefreshToken(
