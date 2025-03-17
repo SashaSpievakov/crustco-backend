@@ -18,13 +18,13 @@ import { authenticator } from 'otplib';
 import * as qrcode from 'qrcode';
 
 import { AuthProvider, ProviderUser } from 'src/common/types/provider-user.type';
+import { TwoFactorMethod } from 'src/common/types/twoFactorMethod.type';
 import { User } from 'src/user/schemas/user.schema';
 
 import { UserService } from '../user/user.service';
 import { ProfileDto } from './dto/profile.dto';
 import { ProfileUpdateDto } from './dto/profile-update-input.dto';
 import { TotpGenerateSuccessDto } from './dto/totp-generate-success.dto';
-import { VerificationInputDto } from './dto/verification-input.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { Token, TokenDocument } from './schemas/token.schema';
 
@@ -121,12 +121,29 @@ export class AuthService {
     await this.login(user, userAgent, ipAddress, res, 'Email verified successfully.');
   }
 
-  async verify2FA(verificationBody: VerificationInputDto): Promise<User> {
-    const user = await this.userService.verify2FACode(
-      verificationBody.email,
-      verificationBody.code,
-    );
+  async verifyEmail2FA(email: string, code: string): Promise<User> {
+    const user = await this.userService.verifyEmail2FA(email, code);
     return user;
+  }
+
+  async verifyTotp2FA(email: string, token: string): Promise<User> {
+    const user = await this.userService.findOne(email);
+
+    if (!user || !user.totpEnabled || !user.totpSecret || !user.totp2FAStarted) {
+      throw new BadRequestException('Invalid or expired totp token');
+    }
+
+    const decryptedSecret = this.decryptSecret(user.totpSecret);
+    const totpValidated = authenticator.verify({
+      token: token,
+      secret: decryptedSecret,
+    });
+    if (!totpValidated) {
+      throw new BadRequestException('Invalid or expired totp token');
+    }
+
+    user.totp2FAStarted = false;
+    return await user.save();
   }
 
   async loginWithProvider(
@@ -145,7 +162,7 @@ export class AuthService {
 
     if (existingUser && existingUser.provider === providerType) {
       if (existingUser.twoFactorMethod) {
-        await this.request2FA(existingUser.email);
+        await this.request2FA(existingUser._id, existingUser.twoFactorMethod);
 
         res.status(HttpStatus.ACCEPTED).json({
           message: 'Two-factor authentication required.',
@@ -336,8 +353,14 @@ export class AuthService {
     }
   }
 
-  async request2FA(email: string): Promise<void> {
-    await this.userService.initialize2FA(email);
+  async request2FA(userId: string, method: TwoFactorMethod): Promise<void> {
+    if (method === 'email') {
+      await this.userService.initialize2FA(userId);
+    } else if (method === 'totp') {
+      await this.userService.update(userId, {
+        totp2FAStarted: true,
+      });
+    }
     return;
   }
 

@@ -47,6 +47,9 @@ export class User {
   @Prop({ required: false, type: Boolean, default: null })
   totpEnabled: boolean | null;
 
+  @Prop({ required: false, type: Boolean, default: null })
+  totp2FAStarted: boolean | null;
+
   @Prop({ required: false, type: String, default: null })
   photo: string | null;
 }

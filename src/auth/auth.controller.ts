@@ -29,6 +29,7 @@ import { AuthenticatedRequest } from 'src/common/types/authenticated-request.typ
 import { GoogleAuthenticatedRequest } from 'src/common/types/google-authenticated-request.type';
 
 import { AuthService } from './auth.service';
+import { EmailVerificationInputDto } from './dto/email-verification-input.dto';
 import { ForgotPasswordInputDto } from './dto/forgot-password-input.dto';
 import { LoginFailedDto } from './dto/login-failed.dto';
 import { LoginInputDto } from './dto/login-input.dto';
@@ -40,7 +41,7 @@ import { Success2FARequestDto } from './dto/success-2fa-request.dto';
 import { TotpDisableInputDto } from './dto/totp-disable-input.dto';
 import { TotpEnableInputDto } from './dto/totp-enable-input.dto';
 import { TotpGenerateSuccessDto } from './dto/totp-generate-success.dto';
-import { VerificationInputDto } from './dto/verification-input.dto';
+import { TwoFactorVerificationInputDto } from './dto/two-factor-verification-input.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -82,7 +83,7 @@ export class AuthController {
     const user = await this.authService.validateUser(loginBody.email, loginBody.password);
 
     if (user.twoFactorMethod) {
-      await this.authService.request2FA(user.email);
+      await this.authService.request2FA(user._id, user.twoFactorMethod);
 
       res.status(HttpStatus.ACCEPTED).json({
         message: 'Two-factor authentication required.',
@@ -98,7 +99,7 @@ export class AuthController {
     summary: 'Verify Two-Factor Authentication (2FA) Code',
     description: 'Validates the provided 2FA code and grants access if the code is correct.',
   })
-  @ApiBody({ type: VerificationInputDto })
+  @ApiBody({ type: TwoFactorVerificationInputDto })
   @ApiResponse({
     status: 200,
     description: 'Logged in successfully',
@@ -112,14 +113,23 @@ export class AuthController {
   @Post('verify-2fa')
   @HttpCode(HttpStatus.OK)
   async verify2FA(
-    @Body() verificationBody: VerificationInputDto,
+    @Body() verificationBody: TwoFactorVerificationInputDto,
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<RequestSuccessDto | void> {
     const userAgent = req.headers['user-agent'] || 'Unknown';
     const ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+    let user;
 
-    const user = await this.authService.verify2FA(verificationBody);
+    if (verificationBody.twoFactorMethod === 'email') {
+      user = await this.authService.verifyEmail2FA(verificationBody.email, verificationBody.token);
+    } else if (verificationBody.twoFactorMethod === 'totp') {
+      user = await this.authService.verifyTotp2FA(verificationBody.email, verificationBody.token);
+    }
+
+    if (!user) {
+      throw new UnauthorizedException();
+    }
 
     return this.authService.login(user, userAgent, ipAddress, res);
   }
@@ -298,7 +308,7 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: "Vefify user's email" })
-  @ApiBody({ type: VerificationInputDto })
+  @ApiBody({ type: EmailVerificationInputDto })
   @ApiResponse({
     status: 200,
     description: 'Verification is successful',
@@ -312,7 +322,7 @@ export class AuthController {
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   async verifyEmail(
-    @Body() verificationBody: VerificationInputDto,
+    @Body() verificationBody: EmailVerificationInputDto,
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<RequestSuccessDto | void> {

@@ -30,4 +30,12 @@ export class UserUpdateDto {
   @IsArray()
   @IsOptional()
   twoFactorMethod?: TwoFactorMethod | null;
+
+  @ApiProperty({
+    description: 'Flag if TOTP 2FA has been started',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  totp2FAStarted?: boolean | null;
 }

@@ -195,8 +195,8 @@ export class UserService {
     return user.save();
   }
 
-  async initialize2FA(email: string): Promise<void> {
-    const user = await this.findOne(email);
+  async initialize2FA(userId: string): Promise<void> {
+    const user = await this.findOneById(userId);
 
     if (user && user.twoFactorMethod === 'email') {
       const expirationMinutes: number = 5;
@@ -213,7 +213,7 @@ export class UserService {
       );
       const mailOptions = {
         from: `"Crustco Support" <${this.configService.get<string>('EMAIL_USER')}>`,
-        to: email,
+        to: user.email,
         subject: 'Your 2FA Code for Crustco Login',
         text,
         html,
@@ -222,7 +222,7 @@ export class UserService {
       user.verificationCode = verificationCode;
       user.verificationCodeExpiresAt = verificationCodeExpiresAt;
 
-      await this.sendVerificationEmail(email, verificationCode, mailOptions);
+      await this.sendVerificationEmail(user.email, verificationCode, mailOptions);
 
       await user.save();
       return;
@@ -231,7 +231,7 @@ export class UserService {
     }
   }
 
-  async verify2FACode(email: string, code: string): Promise<User> {
+  async verifyEmail2FA(email: string, code: string): Promise<User> {
     const user = await this.findOne(email);
     const currentTime = new Date();
 
