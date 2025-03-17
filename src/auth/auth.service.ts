@@ -286,7 +286,7 @@ export class AuthService {
     const user = await this.userService.findOneById(userId);
     const { firstName, lastName, twoFactorMethod } = updatedInfo;
 
-    if (user?.totpEnabled && twoFactorMethod) {
+    if (user?.totpEnabled && twoFactorMethod !== undefined) {
       throw new BadRequestException('Cannot update 2fa method when totp is enabled.');
     }
 
