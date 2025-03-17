@@ -17,7 +17,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '10m' },
+        signOptions: { expiresIn: configService.get<string>('ACCESS_TOKEN_EXP_TIME') },
       }),
     }),
     MongooseModule.forFeature([{ name: Token.name, schema: TokenSchema }]),

@@ -63,7 +63,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '10m',
+      expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXP_TIME'),
     });
 
     const refreshToken = this.jwtService.sign(payload, {
@@ -245,7 +245,10 @@ export class AuthService {
 
       const newAccessToken = this.jwtService.sign(
         { email: user.email, sub: user._id.toString() },
-        { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '10m' },
+        {
+          secret: this.configService.get<string>('JWT_SECRET'),
+          expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXP_TIME'),
+        },
       );
 
       res.cookie('access_token', newAccessToken, {
