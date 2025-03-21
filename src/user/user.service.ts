@@ -14,6 +14,7 @@ import { MailOptions } from 'nodemailer/lib/smtp-transport';
 
 import { ProviderUser } from 'src/common/types/provider-user.type';
 
+import { UserDto } from './dto/user.dto';
 import { UserUpdateDto } from './dto/user-update.dto';
 import { getTwoFactorAuthTemplate } from './emails/2fa-verification.template';
 import { getVerificationEmailTemplate } from './emails/email-verification.template';
@@ -33,6 +34,16 @@ export class UserService {
 
   async findOneById(id: string): Promise<UserDocument | null> {
     return this.userModel.findById(id).exec();
+  }
+
+  async getAll(limit: number = 1000): Promise<UserDto[]> {
+    const users = await this.userModel
+      .find({}, { password: 0, totpSecret: 0, __v: 0 })
+      .limit(limit)
+      .lean()
+      .exec();
+
+    return users;
   }
 
   async update(id: string, updatedUserReq: UserUpdateDto): Promise<User | null> {
