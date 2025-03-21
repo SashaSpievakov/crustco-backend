@@ -52,6 +52,12 @@ export class User {
 
   @Prop({ required: false, type: String, default: null })
   photo: string | null;
+
+  @Prop({ type: Date })
+  createdAt: Date;
+
+  @Prop({ type: Date })
+  updatedAt: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
