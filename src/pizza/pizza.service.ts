@@ -26,12 +26,8 @@ export class PizzaService {
     return this.pizzaModel.find(dbQuery).sort(dbSort);
   }
 
-  async getOne(name: string): Promise<Pizza> {
+  async getOne(name: string): Promise<Pizza | null> {
     const pizza = await this.pizzaModel.findOne({ name }).exec();
-
-    if (!pizza) {
-      throw new NotFoundException(`Pizza with name "${name}" not found.`);
-    }
 
     return pizza;
   }

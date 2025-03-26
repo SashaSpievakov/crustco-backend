@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Logger,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -15,6 +16,7 @@ import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/s
 
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
+import { NotFoundErrorResponseDto } from 'src/common/dto/not-found-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { ServerErrorResponseDto } from 'src/common/dto/server-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
@@ -67,19 +69,19 @@ export class PizzaController {
     type: PizzaDto,
   })
   @ApiResponse({
-    status: 400,
+    status: 404,
     description: 'Pizza not found',
-    type: GeneralUserErrorResponseDto,
+    type: NotFoundErrorResponseDto,
   })
   @Get(':name')
   async getOne(@Param('name') name: string): Promise<Pizza> {
-    try {
-      const pizza = await this.pizzaService.getOne(name);
-      return pizza;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Internal Server Error';
-      throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
+    const pizza = await this.pizzaService.getOne(name);
+
+    if (!pizza) {
+      throw new NotFoundException(`Pizza with name "${name}" not found.`);
     }
+
+    return pizza;
   }
 
   @ApiOperation({ summary: 'Create a new pizza' })

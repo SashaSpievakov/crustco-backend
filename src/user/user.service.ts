@@ -28,8 +28,19 @@ export class UserService {
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
   ) {}
 
-  async findOne(email: string): Promise<UserDocument | null> {
-    return this.userModel.findOne({ email }).exec();
+  async findOne<T extends (keyof User)[]>(
+    email: string,
+    excludeFields: T,
+  ): Promise<Omit<UserDocument, T[number]> | null> {
+    const projection = excludeFields.reduce(
+      (acc, field) => {
+        acc[field] = 0;
+        return acc;
+      },
+      {} as Record<string, 0>,
+    );
+
+    return this.userModel.findOne({ email }, projection).exec();
   }
 
   async findOneById(id: string): Promise<UserDocument | null> {
@@ -60,7 +71,7 @@ export class UserService {
     firstName: string,
     lastName: string,
   ): Promise<User | void> {
-    const existingUser = await this.findOne(email);
+    const existingUser = await this.findOne(email, []);
 
     const verificationCode = crypto.randomBytes(3).toString('hex');
     const verificationCodeExpiresAt = new Date();
@@ -108,7 +119,7 @@ export class UserService {
   }
 
   async registerWithProvider(providerUser: ProviderUser): Promise<UserDocument | void> {
-    const existingUser = await this.findOne(providerUser.email);
+    const existingUser = await this.findOne(providerUser.email, []);
 
     if (!existingUser) {
       const newUser = new this.userModel({
@@ -126,7 +137,7 @@ export class UserService {
   }
 
   async verifyEmail(email: string, code: string): Promise<User> {
-    const user = await this.findOne(email);
+    const user = await this.findOne(email, []);
     const currentTime = new Date();
 
     if (
@@ -161,7 +172,7 @@ export class UserService {
   }
 
   async initializeForgotPassword(email: string): Promise<void> {
-    const user = await this.findOne(email);
+    const user = await this.findOne(email, []);
     if (user && user.provider === null) {
       const verificationCode = crypto.randomBytes(3).toString('hex');
       const verificationCodeExpiresAt = new Date();
@@ -187,7 +198,7 @@ export class UserService {
   }
 
   async createNewPassword(email: string, code: string, password: string): Promise<User> {
-    const user = await this.findOne(email);
+    const user = await this.findOne(email, []);
     const currentTime = new Date();
 
     if (
@@ -243,7 +254,7 @@ export class UserService {
   }
 
   async verifyEmail2FA(email: string, code: string): Promise<User> {
-    const user = await this.findOne(email);
+    const user = await this.findOne(email, []);
     const currentTime = new Date();
 
     if (

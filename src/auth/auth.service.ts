@@ -38,7 +38,7 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.userService.findOne(email);
+    const user = await this.userService.findOne(email, []);
 
     if (
       user &&
@@ -127,7 +127,7 @@ export class AuthService {
   }
 
   async verifyTotp2FA(email: string, token: string): Promise<User> {
-    const user = await this.userService.findOne(email);
+    const user = await this.userService.findOne(email, []);
 
     if (!user || !user.totpEnabled || !user.totpSecret || !user.totp2FAStarted) {
       throw new BadRequestException('Invalid or expired totp token');
@@ -153,7 +153,7 @@ export class AuthService {
     ipAddress: string | undefined,
     @Response() res: ExpressResponse,
   ): Promise<void> {
-    let existingUser = await this.userService.findOne(providerUser.email);
+    let existingUser = await this.userService.findOne(providerUser.email, []);
 
     if (!existingUser) {
       const newUser = await this.userService.registerWithProvider(providerUser);
