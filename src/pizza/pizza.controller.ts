@@ -15,7 +15,6 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
 import { NotFoundErrorResponseDto } from 'src/common/dto/not-found-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { ServerErrorResponseDto } from 'src/common/dto/server-error.dto';
@@ -53,13 +52,8 @@ export class PizzaController {
     @Query('category') category: number,
     @Query('sortBy') sortBy: string,
   ): Promise<Pizza[]> {
-    try {
-      const pizzas = await this.pizzaService.getAll(category, sortBy);
-      return pizzas;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Internal Server Error';
-      throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
-    }
+    const pizzas = await this.pizzaService.getAll(category, sortBy);
+    return pizzas;
   }
 
   @ApiOperation({ summary: 'Get a pizza by name' })
@@ -156,29 +150,18 @@ export class PizzaController {
     type: RequestSuccessDto,
   })
   @ApiResponse({
-    status: 400,
+    status: 404,
     description: 'Pizza not found',
-    type: GeneralUserErrorResponseDto,
+    type: NotFoundErrorResponseDto,
   })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
   @Delete(':id')
   async delete(@Param('id') id: string): Promise<RequestSuccessDto> {
-    try {
-      await this.pizzaService.delete(id);
-      return {
-        message: `The pizza with #${id} was successfully deleted`,
-      };
-    } catch (err) {
-      if (err instanceof Error) {
-        if (err.message.includes('not found')) {
-          throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
-        }
-      }
+    await this.pizzaService.delete(id);
 
-      const errorMessage = err instanceof Error ? err.message : 'Bad Request';
-      Logger.error(errorMessage, 'PizzaController');
-      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    return {
+      message: `The pizza with #${id} was successfully deleted`,
+    };
   }
 }

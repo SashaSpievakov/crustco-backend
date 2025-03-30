@@ -296,6 +296,10 @@ export class UserService {
     return user;
   }
 
+  async delete(id: string): Promise<void> {
+    await this.userModel.deleteOne({ _id: id }).exec();
+  }
+
   private async sendVerificationEmail(
     email: string,
     verificationCode: string,
