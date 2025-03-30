@@ -27,7 +27,7 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Access denied: Insufficient permissions');
     }
 
-    const dbUser = await this.userService.findOneById(user.sub);
+    const dbUser = await this.userService.findOneById(user.sub, []);
     if (!dbUser || !dbUser.roles) {
       throw new ForbiddenException('Access denied: Insufficient permissions');
     }

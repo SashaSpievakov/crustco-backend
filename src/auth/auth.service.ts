@@ -19,10 +19,10 @@ import * as qrcode from 'qrcode';
 
 import { AuthProvider, ProviderUser } from 'src/common/types/provider-user.type';
 import { TwoFactorMethod } from 'src/common/types/twoFactorMethod.type';
+import { UserDto } from 'src/user/dto/user.dto';
 import { User } from 'src/user/schemas/user.schema';
 
 import { UserService } from '../user/user.service';
-import { ProfileDto } from './dto/profile.dto';
 import { ProfileUpdateDto } from './dto/profile-update-input.dto';
 import { TotpGenerateSuccessDto } from './dto/totp-generate-success.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -184,20 +184,20 @@ export class AuthService {
   }
 
   async generateTotp(userId: string): Promise<TotpGenerateSuccessDto> {
-    const user = await this.userService.findOneById(userId);
+    const user = await this.userService.findOneById(userId, []);
     if (!user) {
       throw new InternalServerErrorException();
     }
 
     const secret = authenticator.generateSecret();
-    const otpAuthUrl = authenticator.keyuri(user?.email, 'Crustco', secret);
+    const otpAuthUrl = authenticator.keyuri(user.email, 'Crustco', secret);
     const qrCodeUrl = await qrcode.toDataURL(otpAuthUrl);
 
     return { qrCodeUrl, secret };
   }
 
   async enableTotpVerification(userId: string, token: string, secret: string): Promise<void> {
-    const user = await this.userService.findOneById(userId);
+    const user = await this.userService.findOneById(userId, []);
     if (!user) {
       throw new InternalServerErrorException();
     }
@@ -219,7 +219,7 @@ export class AuthService {
   }
 
   async disableTotpVerification(userId: string, token: string): Promise<void> {
-    const user = await this.userService.findOneById(userId);
+    const user = await this.userService.findOneById(userId, []);
     if (!user) {
       throw new InternalServerErrorException();
     }
@@ -250,7 +250,7 @@ export class AuthService {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
-      const user = await this.userService.findOneById(decoded.sub);
+      const user = await this.userService.findOneById(decoded.sub, []);
       if (!user) {
         throw new UnauthorizedException('Authentication failed. Please check your credentials.');
       }
@@ -281,29 +281,29 @@ export class AuthService {
     }
   }
 
-  async getProfile(userId: string): Promise<ProfileDto> {
-    const user = await this.userService.findOneById(userId);
+  async getProfile(
+    userId: string,
+  ): Promise<Omit<UserDto, 'verificationCode' | 'verificationCodeExpiresAt' | 'totp2FAStarted'>> {
+    const user = await this.userService.findOneById(userId, [
+      'password',
+      'verificationCode',
+      'verificationCodeExpiresAt',
+      'totpSecret',
+      'totp2FAStarted',
+    ]);
+
     if (!user) {
       throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }
 
-    const safeUser = {
-      _id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      roles: user.roles,
-      emailVerified: user.emailVerified,
-      provider: user.provider,
-      twoFactorMethod: user.twoFactorMethod,
-      totpEnabled: user.totpEnabled,
-    };
-
-    return safeUser;
+    return user;
   }
 
-  async updateProfile(userId: string, updatedInfo: ProfileUpdateDto): Promise<ProfileDto> {
-    const user = await this.userService.findOneById(userId);
+  async updateProfile(
+    userId: string,
+    updatedInfo: ProfileUpdateDto,
+  ): Promise<Omit<UserDto, 'verificationCode' | 'verificationCodeExpiresAt' | 'totp2FAStarted'>> {
+    const user = await this.userService.findOneById(userId, []);
     const { firstName, lastName, twoFactorMethod } = updatedInfo;
 
     if (user?.totpEnabled && twoFactorMethod !== undefined) {
@@ -330,6 +330,9 @@ export class AuthService {
       provider: updatedUser.provider,
       twoFactorMethod: updatedUser.twoFactorMethod,
       totpEnabled: updatedUser.totpEnabled,
+      photo: updatedUser.photo,
+      createdAt: updatedUser.createdAt,
+      updatedAt: updatedUser.updatedAt,
     };
 
     return safeUser;

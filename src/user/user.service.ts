@@ -43,8 +43,19 @@ export class UserService {
     return this.userModel.findOne({ email }, projection).exec();
   }
 
-  async findOneById(id: string): Promise<UserDocument | null> {
-    return this.userModel.findById(id).exec();
+  async findOneById<T extends (keyof User)[]>(
+    id: string,
+    excludeFields: T,
+  ): Promise<Omit<UserDocument, T[number]> | null> {
+    const projection = excludeFields.reduce(
+      (acc, field) => {
+        acc[field] = 0;
+        return acc;
+      },
+      {} as Record<string, 0>,
+    );
+
+    return this.userModel.findById(id, projection).exec();
   }
 
   async getAll(limit: number = 1000): Promise<UserDto[]> {
@@ -158,7 +169,7 @@ export class UserService {
   }
 
   async updatePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
-    const user = await this.findOneById(userId);
+    const user = await this.findOneById(userId, []);
 
     if (!user || !user.password || !(await bcrypt.compare(oldPassword, user.password))) {
       throw new BadRequestException('Invalid old password');
@@ -218,7 +229,7 @@ export class UserService {
   }
 
   async initialize2FA(userId: string): Promise<void> {
-    const user = await this.findOneById(userId);
+    const user = await this.findOneById(userId, []);
 
     if (user && user.twoFactorMethod === 'email') {
       const expirationMinutes: number = 5;

@@ -14,7 +14,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags, OmitType } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 
 import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
@@ -27,13 +27,13 @@ import { GoogleAuthGuard } from 'src/common/guards/google-auth.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from 'src/common/types/authenticated-request.type';
 import { GoogleAuthenticatedRequest } from 'src/common/types/google-authenticated-request.type';
+import { UserDto } from 'src/user/dto/user.dto';
 
 import { AuthService } from './auth.service';
 import { EmailVerificationInputDto } from './dto/email-verification-input.dto';
 import { ForgotPasswordInputDto } from './dto/forgot-password-input.dto';
 import { LoginFailedDto } from './dto/login-failed.dto';
 import { LoginInputDto } from './dto/login-input.dto';
-import { ProfileDto } from './dto/profile.dto';
 import { ProfileUpdateDto } from './dto/profile-update-input.dto';
 import { RegisterInputDto } from './dto/register-input.dto';
 import { ResetPasswordInputDto } from './dto/reset-password-input.dto';
@@ -359,12 +359,14 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'User profile',
-    type: ProfileDto,
+    type: OmitType(UserDto, ['verificationCode', 'verificationCodeExpiresAt', 'totp2FAStarted']),
   })
   @ApiCookieAuth()
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  async getProfile(@Req() req: AuthenticatedRequest): Promise<ProfileDto> {
+  async getProfile(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<Omit<UserDto, 'verificationCode' | 'verificationCodeExpiresAt' | 'totp2FAStarted'>> {
     return await this.authService.getProfile(req.user.sub);
   }
 
@@ -373,7 +375,7 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Updated user profile',
-    type: ProfileDto,
+    type: OmitType(UserDto, ['verificationCode', 'verificationCodeExpiresAt', 'totp2FAStarted']),
   })
   @ApiResponse({
     status: 400,
@@ -386,7 +388,7 @@ export class AuthController {
   async update(
     @Body() updateProfileBody: ProfileUpdateDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<ProfileDto> {
+  ): Promise<Omit<UserDto, 'verificationCode' | 'verificationCodeExpiresAt' | 'totp2FAStarted'>> {
     const updatedProfile = await this.authService.updateProfile(req.user.sub, updateProfileBody);
     return updatedProfile;
   }
