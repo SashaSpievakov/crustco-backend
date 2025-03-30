@@ -310,32 +310,21 @@ export class AuthService {
       throw new BadRequestException('Cannot update 2fa method when totp is enabled.');
     }
 
-    const updatedUser = await this.userService.update(userId, {
-      firstName,
-      lastName,
-      twoFactorMethod,
-    });
+    const updatedUser = await this.userService.update(
+      userId,
+      {
+        firstName,
+        lastName,
+        twoFactorMethod,
+      },
+      ['password', 'verificationCode', 'verificationCodeExpiresAt', 'totpSecret', 'totp2FAStarted'],
+    );
 
     if (!updatedUser) {
       throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }
 
-    const safeUser = {
-      _id: updatedUser._id,
-      firstName: updatedUser.firstName,
-      lastName: updatedUser.lastName,
-      email: updatedUser.email,
-      roles: updatedUser.roles,
-      emailVerified: updatedUser.emailVerified,
-      provider: updatedUser.provider,
-      twoFactorMethod: updatedUser.twoFactorMethod,
-      totpEnabled: updatedUser.totpEnabled,
-      photo: updatedUser.photo,
-      createdAt: updatedUser.createdAt,
-      updatedAt: updatedUser.updatedAt,
-    };
-
-    return safeUser;
+    return updatedUser;
   }
 
   async resetPassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
@@ -360,9 +349,13 @@ export class AuthService {
     if (method === 'email') {
       await this.userService.initialize2FA(userId);
     } else if (method === 'totp') {
-      await this.userService.update(userId, {
-        totp2FAStarted: true,
-      });
+      await this.userService.update(
+        userId,
+        {
+          totp2FAStarted: true,
+        },
+        [],
+      );
     }
     return;
   }

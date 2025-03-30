@@ -68,9 +68,22 @@ export class UserService {
     return users;
   }
 
-  async update(id: string, updatedUserReq: UserUpdateDto): Promise<User | null> {
+  async update<T extends (keyof User)[]>(
+    id: string,
+    updatedUserReq: UserUpdateDto,
+    excludeFields: T,
+  ): Promise<Omit<UserDocument, T[number]> | null> {
+    const projection = excludeFields.reduce(
+      (acc, field) => {
+        acc[field] = 0;
+        return acc;
+      },
+      {} as Record<string, 0>,
+    );
+
     const updatedUser = await this.userModel
       .findOneAndUpdate({ _id: new Types.ObjectId(id) }, updatedUserReq, { new: true })
+      .select(projection)
       .exec();
 
     return updatedUser;

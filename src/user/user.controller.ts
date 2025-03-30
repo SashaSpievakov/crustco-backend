@@ -1,12 +1,23 @@
-import { Controller, Get, NotFoundException, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Patch,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { NotFoundErrorResponseDto } from 'src/common/dto/not-found-error.dto';
+import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 
 import { UserDto } from './dto/user.dto';
+import { UserUpdateDto } from './dto/user-update.dto';
 import { User } from './schemas/user.schema';
 import { UserService } from './user.service';
 
@@ -39,7 +50,7 @@ export class UserController {
   @ApiOperation({ summary: 'Get a user by email' })
   @ApiResponse({
     status: 200,
-    description: 'User profile',
+    description: 'User',
     type: UserDto,
   })
   @ApiResponse({
@@ -58,5 +69,41 @@ export class UserController {
     }
 
     return user;
+  }
+
+  @ApiOperation({ summary: 'Update a user' })
+  @ApiBody({ type: UserUpdateDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Updated user',
+    type: UserDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input',
+    type: ValidationErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+    type: NotFoundErrorResponseDto,
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('Admin')
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UserUpdateDto,
+  ): Promise<Omit<User, 'password' | 'totpSecret'>> {
+    const updatedUser = await this.userService.update(id, updateUserDto, [
+      'password',
+      'totpSecret',
+    ]);
+
+    if (!updatedUser) {
+      throw new NotFoundException(`User with id "${id}" not found.`);
+    }
+
+    return updatedUser;
   }
 }

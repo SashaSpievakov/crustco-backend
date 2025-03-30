@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
 
+import { Role } from 'src/common/types/role.type';
 import { TwoFactorMethod } from 'src/common/types/twoFactorMethod.type';
 
 export class UserUpdateDto {
@@ -23,6 +24,26 @@ export class UserUpdateDto {
   lastName?: string;
 
   @ApiProperty({
+    description: "User's roles",
+    example: ['User', 'Admin'],
+    isArray: true,
+    enum: ['User', 'Admin'],
+    required: false,
+  })
+  @IsArray()
+  @IsOptional()
+  roles?: Role[];
+
+  @ApiProperty({
+    description: 'Indicates if the user verified their email',
+    example: true,
+    required: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  emailVerified?: boolean;
+
+  @ApiProperty({
     description: '2FA method',
     example: 'email',
     required: false,
@@ -38,4 +59,14 @@ export class UserUpdateDto {
   })
   @IsOptional()
   totp2FAStarted?: boolean | null;
+
+  @ApiProperty({
+    description: "User's profile photo URL (null if not set)",
+    example: 'https://example.com/profile.jpg',
+    required: false,
+    nullable: true,
+  })
+  @IsString()
+  @IsOptional()
+  photo?: string | null;
 }
