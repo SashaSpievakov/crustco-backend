@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { PizzaCreateDto } from './dto/pizza-create.dto';
-import { PizzaUpdateDto } from './dto/pizza-update.dto';
+import { PizzaCreateInputDto } from './dto/pizza-create-input.dto';
+import { PizzaUpdateInputDto } from './dto/pizza-update-input.dto';
 import { Pizza, PizzaDocument } from './schemas/pizza.schema';
 
 @Injectable()
@@ -32,12 +32,12 @@ export class PizzaService {
     return pizza;
   }
 
-  async create(createPizzaDto: PizzaCreateDto): Promise<Pizza> {
+  async create(createPizzaDto: PizzaCreateInputDto): Promise<Pizza> {
     const createdPizza = new this.pizzaModel(createPizzaDto);
     return createdPizza.save();
   }
 
-  async update(id: string, updatedPizzaReq: PizzaUpdateDto): Promise<Pizza | null> {
+  async update(id: string, updatedPizzaReq: PizzaUpdateInputDto): Promise<Pizza | null> {
     const updatedPizza = await this.pizzaModel
       .findOneAndUpdate({ id }, updatedPizzaReq, { new: true })
       .exec();

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
-export class PizzaUpdateDto {
+export class PizzaUpdateInputDto {
   @ApiProperty({
     description: 'Unique ID of the pizza',
     example: '10',

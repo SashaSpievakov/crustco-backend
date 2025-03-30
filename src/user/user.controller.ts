@@ -21,7 +21,7 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserDto } from './dto/user.dto';
 import { UserEmailParamDto } from './dto/user-email-param.dto';
 import { UserIdParamDto } from './dto/user-id-param.dto';
-import { UserUpdateDto } from './dto/user-update.dto';
+import { UserUpdateInputDto } from './dto/user-update-input.dto';
 import { User } from './schemas/user.schema';
 import { UserService } from './user.service';
 
@@ -88,7 +88,7 @@ export class UserController {
     type: String,
     example: '60d9d3f0f7b63a23d8c432a8',
   })
-  @ApiBody({ type: UserUpdateDto })
+  @ApiBody({ type: UserUpdateInputDto })
   @ApiResponse({
     status: 200,
     description: 'Updated user',
@@ -109,7 +109,7 @@ export class UserController {
   @Patch(':id')
   async update(
     @Param() params: UserIdParamDto,
-    @Body() updateUserDto: UserUpdateDto,
+    @Body() updateUserDto: UserUpdateInputDto,
   ): Promise<Omit<User, 'password' | 'totpSecret'>> {
     const updatedUser = await this.userService.update(params.id, updateUserDto, [
       'password',

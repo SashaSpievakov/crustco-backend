@@ -24,8 +24,8 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { isMongooseException } from 'src/common/utils/mongoose.utils';
 
 import { PizzaDto } from './dto/pizza.dto';
-import { PizzaCreateDto } from './dto/pizza-create.dto';
-import { PizzaUpdateDto } from './dto/pizza-update.dto';
+import { PizzaCreateInputDto } from './dto/pizza-create-input.dto';
+import { PizzaUpdateInputDto } from './dto/pizza-update-input.dto';
 import { PizzaService } from './pizza.service';
 import { Pizza } from './schemas/pizza.schema';
 
@@ -79,7 +79,7 @@ export class PizzaController {
   }
 
   @ApiOperation({ summary: 'Create a new pizza' })
-  @ApiBody({ type: PizzaCreateDto })
+  @ApiBody({ type: PizzaCreateInputDto })
   @ApiResponse({
     status: 201,
     description: 'Pizza created successfully',
@@ -93,7 +93,7 @@ export class PizzaController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
   @Post()
-  async create(@Body() pizzaBody: PizzaCreateDto): Promise<Pizza> {
+  async create(@Body() pizzaBody: PizzaCreateInputDto): Promise<Pizza> {
     try {
       const pizza = await this.pizzaService.create(pizzaBody);
       return pizza;
@@ -114,7 +114,7 @@ export class PizzaController {
   }
 
   @ApiOperation({ summary: 'Update a pizza' })
-  @ApiBody({ type: PizzaUpdateDto })
+  @ApiBody({ type: PizzaUpdateInputDto })
   @ApiResponse({
     status: 200,
     description: 'Pizza updated successfully',
@@ -133,7 +133,10 @@ export class PizzaController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updatePizzaDto: PizzaUpdateDto): Promise<Pizza> {
+  async update(
+    @Param('id') id: string,
+    @Body() updatePizzaDto: PizzaUpdateInputDto,
+  ): Promise<Pizza> {
     const updatedPizza = await this.pizzaService.update(id, updatePizzaDto);
 
     if (!updatedPizza) {

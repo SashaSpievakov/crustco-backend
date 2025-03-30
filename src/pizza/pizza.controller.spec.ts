@@ -4,8 +4,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 
 import { PizzaDto } from './dto/pizza.dto';
-import { PizzaCreateDto } from './dto/pizza-create.dto';
-import { PizzaUpdateDto } from './dto/pizza-update.dto';
+import { PizzaCreateDto } from './dto/pizza-create-input.dto';
+import { PizzaUpdateDto } from './dto/pizza-update-input.dto';
 import { PizzaController } from './pizza.controller';
 import { PizzaService } from './pizza.service';
 

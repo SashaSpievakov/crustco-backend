@@ -37,10 +37,10 @@ import { LoginInputDto } from './dto/login-input.dto';
 import { ProfileUpdateDto } from './dto/profile-update-input.dto';
 import { RegisterInputDto } from './dto/register-input.dto';
 import { ResetPasswordInputDto } from './dto/reset-password-input.dto';
-import { Success2FARequestDto } from './dto/success-2fa-request.dto';
 import { TotpDisableInputDto } from './dto/totp-disable-input.dto';
 import { TotpEnableInputDto } from './dto/totp-enable-input.dto';
 import { TotpGenerateSuccessDto } from './dto/totp-generate-success.dto';
+import { TwoFactorSuccess } from './dto/two-factor-success.dto';
 import { TwoFactorVerificationInputDto } from './dto/two-factor-verification-input.dto';
 
 @ApiTags('Auth')
@@ -58,7 +58,7 @@ export class AuthController {
   @ApiResponse({
     status: 202,
     description: 'Two-factor authentication required',
-    type: Success2FARequestDto,
+    type: TwoFactorSuccess,
   })
   @ApiResponse({
     status: 400,
@@ -76,7 +76,7 @@ export class AuthController {
     @Body() loginBody: LoginInputDto,
     @Req() req: Request,
     @Res() res: Response,
-  ): Promise<RequestSuccessDto | Success2FARequestDto | void> {
+  ): Promise<RequestSuccessDto | TwoFactorSuccess | void> {
     const userAgent = req.headers['user-agent'] || 'Unknown';
     const ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
 
@@ -226,7 +226,7 @@ export class AuthController {
   @ApiResponse({
     status: 202,
     description: 'Two-factor authentication required',
-    type: Success2FARequestDto,
+    type: TwoFactorSuccess,
   })
   @ApiResponse({
     status: 401,
@@ -238,7 +238,7 @@ export class AuthController {
   async googleAuthRedirect(
     @Req() req: GoogleAuthenticatedRequest,
     @Res() res: Response,
-  ): Promise<RequestSuccessDto | Success2FARequestDto | void> {
+  ): Promise<RequestSuccessDto | TwoFactorSuccess | void> {
     const userAgent = req.headers['user-agent'] || 'Unknown';
     const ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
 
@@ -266,7 +266,7 @@ export class AuthController {
   @ApiResponse({
     status: 202,
     description: 'Two-factor authentication required',
-    type: Success2FARequestDto,
+    type: TwoFactorSuccess,
   })
   @ApiResponse({
     status: 401,
@@ -278,7 +278,7 @@ export class AuthController {
   async githubAuthRedirect(
     @Req() req: GoogleAuthenticatedRequest,
     @Res() res: Response,
-  ): Promise<RequestSuccessDto | Success2FARequestDto | void> {
+  ): Promise<RequestSuccessDto | TwoFactorSuccess | void> {
     const userAgent = req.headers['user-agent'] || 'Unknown';
     const ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
 

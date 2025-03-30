@@ -15,7 +15,7 @@ import { MailOptions } from 'nodemailer/lib/smtp-transport';
 import { ProviderUser } from 'src/common/types/provider-user.type';
 
 import { UserDto } from './dto/user.dto';
-import { UserUpdateDto } from './dto/user-update.dto';
+import { UserUpdateInputDto } from './dto/user-update-input.dto';
 import { getTwoFactorAuthTemplate } from './emails/2fa-verification.template';
 import { getVerificationEmailTemplate } from './emails/email-verification.template';
 import { getForgotPasswordTemplate } from './emails/forgot-password.template';
@@ -70,7 +70,7 @@ export class UserService {
 
   async update<T extends (keyof User)[]>(
     id: string,
-    updatedUserReq: UserUpdateDto,
+    updatedUserReq: UserUpdateInputDto,
     excludeFields: T,
   ): Promise<Omit<UserDocument, T[number]> | null> {
     const projection = excludeFields.reduce(

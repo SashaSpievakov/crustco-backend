@@ -4,7 +4,7 @@ import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
 import { Role } from 'src/common/types/role.type';
 import { TwoFactorMethod } from 'src/common/types/twoFactorMethod.type';
 
-export class UserUpdateDto {
+export class UserUpdateInputDto {
   @ApiProperty({
     description: "User's first name",
     example: 'Jerry',

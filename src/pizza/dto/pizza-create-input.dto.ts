@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
-export class PizzaCreateDto {
+export class PizzaCreateInputDto {
   @ApiProperty({ description: 'Unique ID of the pizza', example: '10' })
   @IsString()
   @IsNotEmpty()
