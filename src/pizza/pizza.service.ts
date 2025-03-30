@@ -37,14 +37,10 @@ export class PizzaService {
     return createdPizza.save();
   }
 
-  async update(id: string, updatedPizzaReq: PizzaUpdateDto): Promise<Pizza> {
+  async update(id: string, updatedPizzaReq: PizzaUpdateDto): Promise<Pizza | null> {
     const updatedPizza = await this.pizzaModel
       .findOneAndUpdate({ id }, updatedPizzaReq, { new: true })
       .exec();
-
-    if (!updatedPizza) {
-      throw new NotFoundException(`Pizza with id "${id}" not found.`);
-    }
 
     return updatedPizza;
   }

@@ -131,24 +131,22 @@ export class PizzaController {
     description: 'Invalid input',
     type: ValidationErrorResponseDto,
   })
+  @ApiResponse({
+    status: 404,
+    description: 'Pizza not found',
+    type: NotFoundErrorResponseDto,
+  })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updatePizzaDto: PizzaUpdateDto): Promise<Pizza> {
-    try {
-      const updatedPizza = await this.pizzaService.update(id, updatePizzaDto);
-      return updatedPizza;
-    } catch (err) {
-      if (err instanceof Error) {
-        if (err.message.includes('not found')) {
-          throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
-        }
-      }
+    const updatedPizza = await this.pizzaService.update(id, updatePizzaDto);
 
-      const errorMessage = err instanceof Error ? err.message : 'Bad Request';
-      Logger.error(errorMessage, 'PizzaController');
-      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    if (!updatedPizza) {
+      throw new NotFoundException(`Pizza with id "${id}" not found.`);
     }
+
+    return updatedPizza;
   }
 
   @ApiOperation({ summary: 'Delete a pizza' })
