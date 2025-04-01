@@ -27,7 +27,7 @@ import { GoogleAuthGuard } from 'src/common/guards/google-auth.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { AuthenticatedRequest } from 'src/common/types/authenticated-request.type';
 import { GoogleAuthenticatedRequest } from 'src/common/types/google-authenticated-request.type';
-import { UserDto } from 'src/user/dto/user.dto';
+import { UserDto } from 'src/users/dto/user.dto';
 
 import { AuthService } from './auth.service';
 import { EmailVerificationInputDto } from './dto/email-verification-input.dto';

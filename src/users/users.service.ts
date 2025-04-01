@@ -22,10 +22,10 @@ import { getForgotPasswordTemplate } from './emails/forgot-password.template';
 import { User, UserDocument } from './schemas/user.schema';
 
 @Injectable()
-export class UserService {
+export class UsersService {
   constructor(
     private readonly configService: ConfigService,
-    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(User.name) private readonly usersModel: Model<UserDocument>,
   ) {}
 
   async findOne<T extends (keyof User)[]>(
@@ -40,7 +40,7 @@ export class UserService {
       {} as Record<string, 0>,
     );
 
-    return this.userModel.findOne({ email }, projection).exec();
+    return this.usersModel.findOne({ email }, projection).exec();
   }
 
   async findOneById<T extends (keyof User)[]>(
@@ -55,11 +55,11 @@ export class UserService {
       {} as Record<string, 0>,
     );
 
-    return this.userModel.findById(id, projection).exec();
+    return this.usersModel.findById(id, projection).exec();
   }
 
   async getAll(limit: number = 1000): Promise<UserDto[]> {
-    const users = await this.userModel
+    const users = await this.usersModel
       .find({}, { password: 0, totpSecret: 0, __v: 0 })
       .limit(limit)
       .lean()
@@ -81,7 +81,7 @@ export class UserService {
       {} as Record<string, 0>,
     );
 
-    const updatedUser = await this.userModel
+    const updatedUser = await this.usersModel
       .findOneAndUpdate({ _id: new Types.ObjectId(id) }, updatedUserReq, { new: true })
       .select(projection)
       .exec();
@@ -125,7 +125,7 @@ export class UserService {
         return existingUser.save();
       }
     } else {
-      const newUser = new this.userModel({
+      const newUser = new this.usersModel({
         email,
         password: hashedPassword,
         firstName,
@@ -146,7 +146,7 @@ export class UserService {
     const existingUser = await this.findOne(providerUser.email, []);
 
     if (!existingUser) {
-      const newUser = new this.userModel({
+      const newUser = new this.usersModel({
         email: providerUser.email,
         firstName: providerUser.firstName,
         lastName: providerUser.lastName,
@@ -297,7 +297,7 @@ export class UserService {
   }
 
   async delete(id: string): Promise<void> {
-    await this.userModel.deleteOne({ _id: id }).exec();
+    await this.usersModel.deleteOne({ _id: id }).exec();
   }
 
   private async sendVerificationEmail(

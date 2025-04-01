@@ -4,17 +4,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 
 import { PizzaDto } from './dto/pizza.dto';
-import { PizzaCreateDto } from './dto/pizza-create-input.dto';
-import { PizzaUpdateDto } from './dto/pizza-update-input.dto';
-import { PizzaController } from './pizza.controller';
-import { PizzaService } from './pizza.service';
+import { PizzaCreateInputDto } from './dto/pizza-create-input.dto';
+import { PizzaUpdateInputDto } from './dto/pizza-update-input.dto';
+import { PizzasController } from './pizzas.controller';
+import { PizzasService } from './pizzas.service';
 
-describe('PizzaController', () => {
-  let controller: PizzaController;
+describe('PizzasController', () => {
+  let controller: PizzasController;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let service: PizzaService;
+  let service: PizzasService;
 
-  const mockPizzaService = {
+  const mockPizzasService = {
     getAll: jest.fn(),
     getOne: jest.fn(),
     create: jest.fn(),
@@ -24,30 +24,30 @@ describe('PizzaController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [PizzaController],
+      controllers: [PizzasController],
       providers: [
         {
-          provide: PizzaService,
-          useValue: mockPizzaService,
+          provide: PizzasService,
+          useValue: mockPizzasService,
         },
       ],
     }).compile();
 
-    controller = module.get<PizzaController>(PizzaController);
-    service = module.get<PizzaService>(PizzaService);
+    controller = module.get<PizzasController>(PizzasController);
+    service = module.get<PizzasService>(PizzasService);
   });
 
   describe('getAll', () => {
     it('should return a list of pizzas', async () => {
       const result = [{ name: 'Margherita' }] as PizzaDto[];
-      mockPizzaService.getAll.mockResolvedValue(result);
+      mockPizzasService.getAll.mockResolvedValue(result);
 
       expect(await controller.getAll(1, 'asc')).toBe(result);
-      expect(mockPizzaService.getAll).toHaveBeenCalledWith(1, 'asc');
+      expect(mockPizzasService.getAll).toHaveBeenCalledWith(1, 'asc');
     });
 
     it('should throw an error if something goes wrong', async () => {
-      mockPizzaService.getAll.mockRejectedValue(new Error('Failed to fetch pizzas'));
+      mockPizzasService.getAll.mockRejectedValue(new Error('Failed to fetch pizzas'));
 
       await expect(controller.getAll(1, 'asc')).rejects.toThrow(HttpException);
     });
@@ -56,14 +56,14 @@ describe('PizzaController', () => {
   describe('getOne', () => {
     it('should return a pizza', async () => {
       const pizza = { name: 'Margherita' } as PizzaDto;
-      mockPizzaService.getOne.mockResolvedValue(pizza);
+      mockPizzasService.getOne.mockResolvedValue(pizza);
 
       expect(await controller.getOne('Margherita')).toBe(pizza);
-      expect(mockPizzaService.getOne).toHaveBeenCalledWith('Margherita');
+      expect(mockPizzasService.getOne).toHaveBeenCalledWith('Margherita');
     });
 
     it('should throw an error if pizza not found', async () => {
-      mockPizzaService.getOne.mockRejectedValue(new Error('Pizza not found'));
+      mockPizzasService.getOne.mockRejectedValue(new Error('Pizza not found'));
 
       await expect(controller.getOne('NonExistentPizza')).rejects.toThrow(HttpException);
     });
@@ -71,7 +71,7 @@ describe('PizzaController', () => {
 
   describe('create', () => {
     it('should create a pizza successfully', async () => {
-      const createPizzaDto: PizzaCreateDto = {
+      const createPizzaDto: PizzaCreateInputDto = {
         id: '100',
         name: 'Margherita',
         description: 'Classic pizza',
@@ -82,14 +82,14 @@ describe('PizzaController', () => {
         sizes: [26],
       };
       const pizza = { ...createPizzaDto } as PizzaDto;
-      mockPizzaService.create.mockResolvedValue(pizza);
+      mockPizzasService.create.mockResolvedValue(pizza);
 
       expect(await controller.create(createPizzaDto)).toBe(pizza);
-      expect(mockPizzaService.create).toHaveBeenCalledWith(createPizzaDto);
+      expect(mockPizzasService.create).toHaveBeenCalledWith(createPizzaDto);
     });
 
     it('should throw a duplicate ID error if pizza with the same ID already exists', async () => {
-      const createPizzaDto: PizzaCreateDto = {
+      const createPizzaDto: PizzaCreateInputDto = {
         id: '100',
         name: 'Margherita',
         description: 'Classic pizza',
@@ -104,7 +104,7 @@ describe('PizzaController', () => {
         code: 11000,
         message: 'Duplicate id error',
       };
-      mockPizzaService.create.mockRejectedValue(duplicateError);
+      mockPizzasService.create.mockRejectedValue(duplicateError);
 
       await expect(controller.create(createPizzaDto)).rejects.toThrow(
         new HttpException(
@@ -113,29 +113,29 @@ describe('PizzaController', () => {
         ),
       );
 
-      expect(mockPizzaService.create).toHaveBeenCalledWith(createPizzaDto);
+      expect(mockPizzasService.create).toHaveBeenCalledWith(createPizzaDto);
     });
   });
 
   describe('update', () => {
     it('should update a pizza successfully', async () => {
-      const updatePizzaDto: PizzaUpdateDto = { name: 'Updated Pizza' };
+      const updatePizzaDto: PizzaUpdateInputDto = { name: 'Updated Pizza' };
       const updatedPizza = { ...updatePizzaDto } as PizzaDto;
-      mockPizzaService.update.mockResolvedValue(updatedPizza);
+      mockPizzasService.update.mockResolvedValue(updatedPizza);
 
       expect(await controller.update('1', updatePizzaDto)).toBe(updatedPizza);
-      expect(mockPizzaService.update).toHaveBeenCalledWith('1', updatePizzaDto);
+      expect(mockPizzasService.update).toHaveBeenCalledWith('1', updatePizzaDto);
     });
 
     it('should throw an error if pizza is not found', async () => {
       const errorMessage = 'Pizza not found';
-      mockPizzaService.update.mockRejectedValue(new Error(errorMessage));
+      mockPizzasService.update.mockRejectedValue(new Error(errorMessage));
 
       await expect(controller.update('1', { name: 'Updated Pizza' })).rejects.toThrow(
         new Error(errorMessage),
       );
 
-      expect(mockPizzaService.update).toHaveBeenCalledWith('1', { name: 'Updated Pizza' });
+      expect(mockPizzasService.update).toHaveBeenCalledWith('1', { name: 'Updated Pizza' });
     });
   });
 
@@ -144,20 +144,20 @@ describe('PizzaController', () => {
       const deleteResponse: RequestSuccessDto = {
         message: 'The pizza with #1 was successfully deleted',
       };
-      mockPizzaService.delete.mockResolvedValue(deleteResponse);
+      mockPizzasService.delete.mockResolvedValue(deleteResponse);
 
       expect(await controller.delete('1')).toEqual(deleteResponse);
 
-      expect(mockPizzaService.delete).toHaveBeenCalledWith('1');
+      expect(mockPizzasService.delete).toHaveBeenCalledWith('1');
     });
 
     it('should throw an error if pizza is not found', async () => {
       const errorMessage = 'Pizza not found';
-      mockPizzaService.delete.mockRejectedValue(new Error(errorMessage));
+      mockPizzasService.delete.mockRejectedValue(new Error(errorMessage));
 
       await expect(controller.delete('1')).rejects.toThrow(new Error(errorMessage));
 
-      expect(mockPizzaService.delete).toHaveBeenCalledWith('1');
+      expect(mockPizzasService.delete).toHaveBeenCalledWith('1');
     });
   });
 });

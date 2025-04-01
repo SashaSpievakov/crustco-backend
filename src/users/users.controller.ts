@@ -23,12 +23,12 @@ import { UserEmailParamDto } from './dto/user-email-param.dto';
 import { UserIdParamDto } from './dto/user-id-param.dto';
 import { UserUpdateInputDto } from './dto/user-update-input.dto';
 import { User } from './schemas/user.schema';
-import { UserService } from './user.service';
+import { UsersService } from './users.service';
 
-@ApiTags('User')
-@Controller('user')
-export class UserController {
-  constructor(private readonly userService: UserService) {}
+@ApiTags('Users')
+@Controller('users')
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
 
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({
@@ -47,7 +47,7 @@ export class UserController {
   @Roles('Admin')
   @Get()
   async getAll(@Query('limit') limit?: number): Promise<UserDto[]> {
-    const users = await this.userService.getAll(limit);
+    const users = await this.usersService.getAll(limit);
     return users;
   }
 
@@ -72,7 +72,7 @@ export class UserController {
   @Roles('Admin')
   @Get(':email')
   async getOne(@Param() params: UserEmailParamDto): Promise<Omit<User, 'password' | 'totpSecret'>> {
-    const user = await this.userService.findOne(params.email, ['password', 'totpSecret']);
+    const user = await this.usersService.findOne(params.email, ['password', 'totpSecret']);
 
     if (!user) {
       throw new NotFoundException(`User with email "${params.email}" not found.`);
@@ -111,7 +111,7 @@ export class UserController {
     @Param() params: UserIdParamDto,
     @Body() updateUserDto: UserUpdateInputDto,
   ): Promise<Omit<User, 'password' | 'totpSecret'>> {
-    const updatedUser = await this.userService.update(params.id, updateUserDto, [
+    const updatedUser = await this.usersService.update(params.id, updateUserDto, [
       'password',
       'totpSecret',
     ]);
@@ -149,13 +149,13 @@ export class UserController {
   @Roles('Admin')
   @Delete(':id')
   async delete(@Param() params: UserIdParamDto): Promise<RequestSuccessDto> {
-    const userToDelete = await this.userService.findOneById(params.id, []);
+    const userToDelete = await this.usersService.findOneById(params.id, []);
 
     if (!userToDelete) {
       throw new NotFoundException(`User with id "${params.id}" not found.`);
     }
 
-    await this.userService.delete(userToDelete._id);
+    await this.usersService.delete(userToDelete._id);
     return {
       message: `The user with id: ${userToDelete.id} was successfully deleted`,
     };

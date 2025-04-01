@@ -26,13 +26,13 @@ import { isMongooseException } from 'src/common/utils/mongoose.utils';
 import { PizzaDto } from './dto/pizza.dto';
 import { PizzaCreateInputDto } from './dto/pizza-create-input.dto';
 import { PizzaUpdateInputDto } from './dto/pizza-update-input.dto';
-import { PizzaService } from './pizza.service';
+import { PizzasService } from './pizzas.service';
 import { Pizza } from './schemas/pizza.schema';
 
-@ApiTags('Pizza')
-@Controller('pizza')
-export class PizzaController {
-  constructor(private readonly pizzaService: PizzaService) {}
+@ApiTags('Pizzas')
+@Controller('pizzas')
+export class PizzasController {
+  constructor(private readonly pizzasService: PizzasService) {}
 
   @ApiOperation({ summary: 'Get all pizzas' })
   @ApiResponse({
@@ -52,7 +52,7 @@ export class PizzaController {
     @Query('category') category: number,
     @Query('sortBy') sortBy: string,
   ): Promise<Pizza[]> {
-    const pizzas = await this.pizzaService.getAll(category, sortBy);
+    const pizzas = await this.pizzasService.getAll(category, sortBy);
     return pizzas;
   }
 
@@ -69,7 +69,7 @@ export class PizzaController {
   })
   @Get(':name')
   async getOne(@Param('name') name: string): Promise<Pizza> {
-    const pizza = await this.pizzaService.getOne(name);
+    const pizza = await this.pizzasService.getOne(name);
 
     if (!pizza) {
       throw new NotFoundException(`Pizza with name "${name}" not found.`);
@@ -95,7 +95,7 @@ export class PizzaController {
   @Post()
   async create(@Body() pizzaBody: PizzaCreateInputDto): Promise<Pizza> {
     try {
-      const pizza = await this.pizzaService.create(pizzaBody);
+      const pizza = await this.pizzasService.create(pizzaBody);
       return pizza;
     } catch (err) {
       if (isMongooseException(err)) {
@@ -137,7 +137,7 @@ export class PizzaController {
     @Param('id') id: string,
     @Body() updatePizzaDto: PizzaUpdateInputDto,
   ): Promise<Pizza> {
-    const updatedPizza = await this.pizzaService.update(id, updatePizzaDto);
+    const updatedPizza = await this.pizzasService.update(id, updatePizzaDto);
 
     if (!updatedPizza) {
       throw new NotFoundException(`Pizza with id "${id}" not found.`);
@@ -161,7 +161,7 @@ export class PizzaController {
   @Roles('Admin')
   @Delete(':id')
   async delete(@Param('id') id: string): Promise<RequestSuccessDto> {
-    await this.pizzaService.delete(id);
+    await this.pizzasService.delete(id);
 
     return {
       message: `The pizza with #${id} was successfully deleted`,

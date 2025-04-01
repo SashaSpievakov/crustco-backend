@@ -7,8 +7,8 @@ import { PizzaUpdateInputDto } from './dto/pizza-update-input.dto';
 import { Pizza, PizzaDocument } from './schemas/pizza.schema';
 
 @Injectable()
-export class PizzaService {
-  constructor(@InjectModel(Pizza.name) private readonly pizzaModel: Model<PizzaDocument>) {}
+export class PizzasService {
+  constructor(@InjectModel(Pizza.name) private readonly pizzasModel: Model<PizzaDocument>) {}
 
   async getAll(category?: number, sortBy?: string): Promise<Pizza[]> {
     const dbQuery: Record<string, any> = {};
@@ -23,22 +23,22 @@ export class PizzaService {
       dbSort[sortField] = sortOrder === 'asc' ? 1 : -1;
     }
 
-    return this.pizzaModel.find(dbQuery).sort(dbSort);
+    return this.pizzasModel.find(dbQuery).sort(dbSort);
   }
 
   async getOne(name: string): Promise<Pizza | null> {
-    const pizza = await this.pizzaModel.findOne({ name }).exec();
+    const pizza = await this.pizzasModel.findOne({ name }).exec();
 
     return pizza;
   }
 
   async create(createPizzaDto: PizzaCreateInputDto): Promise<Pizza> {
-    const createdPizza = new this.pizzaModel(createPizzaDto);
+    const createdPizza = new this.pizzasModel(createPizzaDto);
     return createdPizza.save();
   }
 
   async update(id: string, updatedPizzaReq: PizzaUpdateInputDto): Promise<Pizza | null> {
-    const updatedPizza = await this.pizzaModel
+    const updatedPizza = await this.pizzasModel
       .findOneAndUpdate({ id }, updatedPizzaReq, { new: true })
       .exec();
 
@@ -46,12 +46,12 @@ export class PizzaService {
   }
 
   async delete(id: string): Promise<void> {
-    const pizzaToDelete = await this.pizzaModel.findOne({ id }).exec();
+    const pizzaToDelete = await this.pizzasModel.findOne({ id }).exec();
 
     if (!pizzaToDelete) {
       throw new NotFoundException(`Pizza with id "${id}" not found.`);
     }
 
-    await this.pizzaModel.deleteOne({ id }).exec();
+    await this.pizzasModel.deleteOne({ id }).exec();
   }
 }

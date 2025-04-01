@@ -4,8 +4,8 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from 'mongoose';
 
-import { PizzaUpdateDto } from './dto/pizza-update-input.dto';
-import { PizzaService } from './pizza.service';
+import { PizzaUpdateInputDto } from './dto/pizza-update-input.dto';
+import { PizzasService } from './pizzas.service';
 import { Pizza, PizzaDocument } from './schemas/pizza.schema';
 
 const mockPizza = {
@@ -30,14 +30,14 @@ const mockPizzaModel = {
   exec: jest.fn(),
 };
 
-describe('PizzaService', () => {
-  let service: PizzaService;
+describe('PizzasService', () => {
+  let service: PizzasService;
   let model: Model<PizzaDocument>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        PizzaService,
+        PizzasService,
         {
           provide: getModelToken(Pizza.name),
           useValue: mockPizzaModel,
@@ -45,7 +45,7 @@ describe('PizzaService', () => {
       ],
     }).compile();
 
-    service = module.get<PizzaService>(PizzaService);
+    service = module.get<PizzasService>(PizzasService);
     model = module.get<Model<PizzaDocument>>(getModelToken(Pizza.name));
   });
 
@@ -112,7 +112,7 @@ describe('PizzaService', () => {
 
       const result = await service.update('1', {
         name: 'Updated Pizza',
-      } as PizzaUpdateDto);
+      } as PizzaUpdateInputDto);
       expect(result).toEqual(mockPizza);
       expect(model.findOneAndUpdate).toHaveBeenCalledWith(
         { id: '1' },
@@ -126,9 +126,9 @@ describe('PizzaService', () => {
         exec: jest.fn().mockResolvedValue(null),
       });
 
-      await expect(service.update('99', { name: 'Invalid' } as PizzaUpdateDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.update('99', { name: 'Invalid' } as PizzaUpdateInputDto),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
