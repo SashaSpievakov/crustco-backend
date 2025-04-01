@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import { UserService } from 'src/user/user.service';
+import { UsersService } from 'src/users/users.service';
 
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { AuthenticatedRequest } from '../types/authenticated-request.type';
@@ -11,7 +11,7 @@ import { Role } from '../types/role.type';
 export class RolesGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private userService: UserService,
+    private usersService: UsersService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -27,7 +27,7 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Access denied: Insufficient permissions');
     }
 
-    const dbUser = await this.userService.findOneById(user.sub);
+    const dbUser = await this.usersService.findOneById(user.sub, []);
     if (!dbUser || !dbUser.roles) {
       throw new ForbiddenException('Access denied: Insufficient permissions');
     }

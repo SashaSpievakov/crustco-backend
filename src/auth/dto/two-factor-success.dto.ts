@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 import { TwoFactorMethod } from 'src/common/types/twoFactorMethod.type';
 
-export class Success2FARequestDto {
+export class TwoFactorSuccess {
   @ApiProperty({
     description: 'Message indicating the success of the operation',
     example: 'Successfully completed operation',
