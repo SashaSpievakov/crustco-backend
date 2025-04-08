@@ -63,7 +63,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXP_TIME'),
+      expiresIn: Number(this.configService.get<string>('ACCESS_TOKEN_EXP_TIME_MILLISEC')) / 1000,
     });
 
     const refreshToken = this.jwtService.sign(payload, {
@@ -75,7 +75,7 @@ export class AuthService {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
-      maxAge: 10 * 60 * 1000, // 10 minutes
+      maxAge: Number(this.configService.get<string>('ACCESS_TOKEN_EXP_TIME_MILLISEC')),
     });
 
     res.cookie('refresh_token', refreshToken, {
@@ -264,7 +264,8 @@ export class AuthService {
         { email: user.email, sub: user._id.toString() },
         {
           secret: this.configService.get<string>('JWT_SECRET'),
-          expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXP_TIME'),
+          expiresIn:
+            Number(this.configService.get<string>('ACCESS_TOKEN_EXP_TIME_MILLISEC')) / 1000,
         },
       );
 
@@ -272,7 +273,7 @@ export class AuthService {
         httpOnly: true,
         secure: true,
         sameSite: 'strict',
-        maxAge: 10 * 60 * 1000, // 10 minutes
+        maxAge: Number(this.configService.get<string>('ACCESS_TOKEN_EXP_TIME_MILLISEC')),
       });
 
       res.json({ message: 'Token refreshed successfully.' });
