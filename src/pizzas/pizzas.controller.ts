@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Logger,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -14,7 +15,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { GeneralUserErrorResponseDto } from 'src/common/dto/general-user-error.dto';
+import { NotFoundErrorResponseDto } from 'src/common/dto/not-found-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { ServerErrorResponseDto } from 'src/common/dto/server-error.dto';
 import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
@@ -23,15 +24,15 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { isMongooseException } from 'src/common/utils/mongoose.utils';
 
 import { PizzaDto } from './dto/pizza.dto';
-import { PizzaCreateDto } from './dto/pizza-create.dto';
-import { PizzaUpdateDto } from './dto/pizza-update.dto';
-import { PizzaService } from './pizza.service';
+import { PizzaCreateInputDto } from './dto/pizza-create-input.dto';
+import { PizzaUpdateInputDto } from './dto/pizza-update-input.dto';
+import { PizzasService } from './pizzas.service';
 import { Pizza } from './schemas/pizza.schema';
 
-@ApiTags('Pizza')
-@Controller('pizza')
-export class PizzaController {
-  constructor(private readonly pizzaService: PizzaService) {}
+@ApiTags('Pizzas')
+@Controller('pizzas')
+export class PizzasController {
+  constructor(private readonly pizzasService: PizzasService) {}
 
   @ApiOperation({ summary: 'Get all pizzas' })
   @ApiResponse({
@@ -51,13 +52,8 @@ export class PizzaController {
     @Query('category') category: number,
     @Query('sortBy') sortBy: string,
   ): Promise<Pizza[]> {
-    try {
-      const pizzas = await this.pizzaService.getAll(category, sortBy);
-      return pizzas;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Internal Server Error';
-      throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
-    }
+    const pizzas = await this.pizzasService.getAll(category, sortBy);
+    return pizzas;
   }
 
   @ApiOperation({ summary: 'Get a pizza by name' })
@@ -67,23 +63,23 @@ export class PizzaController {
     type: PizzaDto,
   })
   @ApiResponse({
-    status: 400,
+    status: 404,
     description: 'Pizza not found',
-    type: GeneralUserErrorResponseDto,
+    type: NotFoundErrorResponseDto,
   })
   @Get(':name')
   async getOne(@Param('name') name: string): Promise<Pizza> {
-    try {
-      const pizza = await this.pizzaService.getOne(name);
-      return pizza;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Internal Server Error';
-      throw new HttpException(errorMessage, HttpStatus.BAD_REQUEST);
+    const pizza = await this.pizzasService.getOne(name);
+
+    if (!pizza) {
+      throw new NotFoundException(`Pizza with name "${name}" not found.`);
     }
+
+    return pizza;
   }
 
   @ApiOperation({ summary: 'Create a new pizza' })
-  @ApiBody({ type: PizzaCreateDto })
+  @ApiBody({ type: PizzaCreateInputDto })
   @ApiResponse({
     status: 201,
     description: 'Pizza created successfully',
@@ -97,9 +93,9 @@ export class PizzaController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
   @Post()
-  async create(@Body() pizzaBody: PizzaCreateDto): Promise<Pizza> {
+  async create(@Body() pizzaBody: PizzaCreateInputDto): Promise<Pizza> {
     try {
-      const pizza = await this.pizzaService.create(pizzaBody);
+      const pizza = await this.pizzasService.create(pizzaBody);
       return pizza;
     } catch (err) {
       if (isMongooseException(err)) {
@@ -118,7 +114,7 @@ export class PizzaController {
   }
 
   @ApiOperation({ summary: 'Update a pizza' })
-  @ApiBody({ type: PizzaUpdateDto })
+  @ApiBody({ type: PizzaUpdateInputDto })
   @ApiResponse({
     status: 200,
     description: 'Pizza updated successfully',
@@ -129,24 +125,25 @@ export class PizzaController {
     description: 'Invalid input',
     type: ValidationErrorResponseDto,
   })
+  @ApiResponse({
+    status: 404,
+    description: 'Pizza not found',
+    type: NotFoundErrorResponseDto,
+  })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updatePizzaDto: PizzaUpdateDto): Promise<Pizza> {
-    try {
-      const updatedPizza = await this.pizzaService.update(id, updatePizzaDto);
-      return updatedPizza;
-    } catch (err) {
-      if (err instanceof Error) {
-        if (err.message.includes('not found')) {
-          throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
-        }
-      }
+  async update(
+    @Param('id') id: string,
+    @Body() updatePizzaDto: PizzaUpdateInputDto,
+  ): Promise<Pizza> {
+    const updatedPizza = await this.pizzasService.update(id, updatePizzaDto);
 
-      const errorMessage = err instanceof Error ? err.message : 'Bad Request';
-      Logger.error(errorMessage, 'PizzaController');
-      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    if (!updatedPizza) {
+      throw new NotFoundException(`Pizza with id "${id}" not found.`);
     }
+
+    return updatedPizza;
   }
 
   @ApiOperation({ summary: 'Delete a pizza' })
@@ -156,29 +153,18 @@ export class PizzaController {
     type: RequestSuccessDto,
   })
   @ApiResponse({
-    status: 400,
+    status: 404,
     description: 'Pizza not found',
-    type: GeneralUserErrorResponseDto,
+    type: NotFoundErrorResponseDto,
   })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
   @Delete(':id')
   async delete(@Param('id') id: string): Promise<RequestSuccessDto> {
-    try {
-      await this.pizzaService.delete(id);
-      return {
-        message: `The pizza with #${id} was successfully deleted`,
-      };
-    } catch (err) {
-      if (err instanceof Error) {
-        if (err.message.includes('not found')) {
-          throw new HttpException(err.message, HttpStatus.BAD_REQUEST);
-        }
-      }
+    await this.pizzasService.delete(id);
 
-      const errorMessage = err instanceof Error ? err.message : 'Bad Request';
-      Logger.error(errorMessage, 'PizzaController');
-      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    return {
+      message: `The pizza with #${id} was successfully deleted`,
+    };
   }
 }

@@ -15,29 +15,51 @@ import { MailOptions } from 'nodemailer/lib/smtp-transport';
 import { ProviderUser } from 'src/common/types/provider-user.type';
 
 import { UserDto } from './dto/user.dto';
-import { UserUpdateDto } from './dto/user-update.dto';
+import { UserUpdateInputDto } from './dto/user-update-input.dto';
 import { getTwoFactorAuthTemplate } from './emails/2fa-verification.template';
 import { getVerificationEmailTemplate } from './emails/email-verification.template';
 import { getForgotPasswordTemplate } from './emails/forgot-password.template';
 import { User, UserDocument } from './schemas/user.schema';
 
 @Injectable()
-export class UserService {
+export class UsersService {
   constructor(
     private readonly configService: ConfigService,
-    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(User.name) private readonly usersModel: Model<UserDocument>,
   ) {}
 
-  async findOne(email: string): Promise<UserDocument | null> {
-    return this.userModel.findOne({ email }).exec();
+  async findOne<T extends (keyof User)[]>(
+    email: string,
+    excludeFields: T,
+  ): Promise<Omit<UserDocument, T[number]> | null> {
+    const projection = excludeFields.reduce(
+      (acc, field) => {
+        acc[field] = 0;
+        return acc;
+      },
+      {} as Record<string, 0>,
+    );
+
+    return this.usersModel.findOne({ email }, projection).exec();
   }
 
-  async findOneById(id: string): Promise<UserDocument | null> {
-    return this.userModel.findById(id).exec();
+  async findOneById<T extends (keyof User)[]>(
+    id: string,
+    excludeFields: T,
+  ): Promise<Omit<UserDocument, T[number]> | null> {
+    const projection = excludeFields.reduce(
+      (acc, field) => {
+        acc[field] = 0;
+        return acc;
+      },
+      {} as Record<string, 0>,
+    );
+
+    return this.usersModel.findById(id, projection).exec();
   }
 
   async getAll(limit: number = 1000): Promise<UserDto[]> {
-    const users = await this.userModel
+    const users = await this.usersModel
       .find({}, { password: 0, totpSecret: 0, __v: 0 })
       .limit(limit)
       .lean()
@@ -46,9 +68,22 @@ export class UserService {
     return users;
   }
 
-  async update(id: string, updatedUserReq: UserUpdateDto): Promise<User | null> {
-    const updatedUser = await this.userModel
+  async update<T extends (keyof User)[]>(
+    id: string,
+    updatedUserReq: UserUpdateInputDto,
+    excludeFields: T,
+  ): Promise<Omit<UserDocument, T[number]> | null> {
+    const projection = excludeFields.reduce(
+      (acc, field) => {
+        acc[field] = 0;
+        return acc;
+      },
+      {} as Record<string, 0>,
+    );
+
+    const updatedUser = await this.usersModel
       .findOneAndUpdate({ _id: new Types.ObjectId(id) }, updatedUserReq, { new: true })
+      .select(projection)
       .exec();
 
     return updatedUser;
@@ -60,7 +95,7 @@ export class UserService {
     firstName: string,
     lastName: string,
   ): Promise<User | void> {
-    const existingUser = await this.findOne(email);
+    const existingUser = await this.findOne(email, []);
 
     const verificationCode = crypto.randomBytes(3).toString('hex');
     const verificationCodeExpiresAt = new Date();
@@ -90,7 +125,7 @@ export class UserService {
         return existingUser.save();
       }
     } else {
-      const newUser = new this.userModel({
+      const newUser = new this.usersModel({
         email,
         password: hashedPassword,
         firstName,
@@ -108,10 +143,10 @@ export class UserService {
   }
 
   async registerWithProvider(providerUser: ProviderUser): Promise<UserDocument | void> {
-    const existingUser = await this.findOne(providerUser.email);
+    const existingUser = await this.findOne(providerUser.email, []);
 
     if (!existingUser) {
-      const newUser = new this.userModel({
+      const newUser = new this.usersModel({
         email: providerUser.email,
         firstName: providerUser.firstName,
         lastName: providerUser.lastName,
@@ -126,7 +161,7 @@ export class UserService {
   }
 
   async verifyEmail(email: string, code: string): Promise<User> {
-    const user = await this.findOne(email);
+    const user = await this.findOne(email, []);
     const currentTime = new Date();
 
     if (
@@ -147,7 +182,7 @@ export class UserService {
   }
 
   async updatePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
-    const user = await this.findOneById(userId);
+    const user = await this.findOneById(userId, []);
 
     if (!user || !user.password || !(await bcrypt.compare(oldPassword, user.password))) {
       throw new BadRequestException('Invalid old password');
@@ -161,7 +196,7 @@ export class UserService {
   }
 
   async initializeForgotPassword(email: string): Promise<void> {
-    const user = await this.findOne(email);
+    const user = await this.findOne(email, []);
     if (user && user.provider === null) {
       const verificationCode = crypto.randomBytes(3).toString('hex');
       const verificationCodeExpiresAt = new Date();
@@ -187,7 +222,7 @@ export class UserService {
   }
 
   async createNewPassword(email: string, code: string, password: string): Promise<User> {
-    const user = await this.findOne(email);
+    const user = await this.findOne(email, []);
     const currentTime = new Date();
 
     if (
@@ -207,7 +242,7 @@ export class UserService {
   }
 
   async initialize2FA(userId: string): Promise<void> {
-    const user = await this.findOneById(userId);
+    const user = await this.findOneById(userId, []);
 
     if (user && user.twoFactorMethod === 'email') {
       const expirationMinutes: number = 5;
@@ -243,7 +278,7 @@ export class UserService {
   }
 
   async verifyEmail2FA(email: string, code: string): Promise<User> {
-    const user = await this.findOne(email);
+    const user = await this.findOne(email, []);
     const currentTime = new Date();
 
     if (
@@ -259,6 +294,10 @@ export class UserService {
     await user.save();
 
     return user;
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.usersModel.deleteOne({ _id: id }).exec();
   }
 
   private async sendVerificationEmail(

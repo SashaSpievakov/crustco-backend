@@ -58,5 +58,5 @@ export function setupSwagger(app: INestApplication) {
     });
   });
 
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('api/v2/docs', app, document);
 }

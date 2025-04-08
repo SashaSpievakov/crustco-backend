@@ -19,10 +19,10 @@ import * as qrcode from 'qrcode';
 
 import { AuthProvider, ProviderUser } from 'src/common/types/provider-user.type';
 import { TwoFactorMethod } from 'src/common/types/twoFactorMethod.type';
-import { User } from 'src/user/schemas/user.schema';
+import { UserDto } from 'src/users/dto/user.dto';
+import { User } from 'src/users/schemas/user.schema';
 
-import { UserService } from '../user/user.service';
-import { ProfileDto } from './dto/profile.dto';
+import { UsersService } from '../users/users.service';
 import { ProfileUpdateDto } from './dto/profile-update-input.dto';
 import { TotpGenerateSuccessDto } from './dto/totp-generate-success.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
@@ -31,14 +31,14 @@ import { Token, TokenDocument } from './schemas/token.schema';
 @Injectable()
 export class AuthService {
   constructor(
-    private userService: UserService,
+    private usersService: UsersService,
     private jwtService: JwtService,
     private readonly configService: ConfigService,
     @InjectModel(Token.name) private readonly tokenModel: Model<TokenDocument>,
   ) {}
 
   async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.userService.findOne(email);
+    const user = await this.usersService.findOne(email, []);
 
     if (
       user &&
@@ -63,7 +63,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXP_TIME'),
+      expiresIn: Number(this.configService.get<string>('ACCESS_TOKEN_EXP_TIME_MILLISEC')) / 1000,
     });
 
     const refreshToken = this.jwtService.sign(payload, {
@@ -75,7 +75,7 @@ export class AuthService {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
-      maxAge: 10 * 60 * 1000, // 10 minutes
+      maxAge: Number(this.configService.get<string>('ACCESS_TOKEN_EXP_TIME_MILLISEC')),
     });
 
     res.cookie('refresh_token', refreshToken, {
@@ -102,7 +102,7 @@ export class AuthService {
     firstName: string,
     lastName: string,
   ): Promise<{ message: string }> {
-    await this.userService.register(email, password, firstName, lastName);
+    await this.usersService.register(email, password, firstName, lastName);
 
     return {
       message: 'If this email is not registered, you will receive a verification email shortly.',
@@ -116,18 +116,18 @@ export class AuthService {
     ipAddress: string | undefined,
     @Response() res: ExpressResponse,
   ): Promise<void> {
-    const user = await this.userService.verifyEmail(email, code);
+    const user = await this.usersService.verifyEmail(email, code);
 
     await this.login(user, userAgent, ipAddress, res, 'Email verified successfully.');
   }
 
   async verifyEmail2FA(email: string, code: string): Promise<User> {
-    const user = await this.userService.verifyEmail2FA(email, code);
+    const user = await this.usersService.verifyEmail2FA(email, code);
     return user;
   }
 
   async verifyTotp2FA(email: string, token: string): Promise<User> {
-    const user = await this.userService.findOne(email);
+    const user = await this.usersService.findOne(email, []);
 
     if (!user || !user.totpEnabled || !user.totpSecret || !user.totp2FAStarted) {
       throw new BadRequestException('Invalid or expired totp token');
@@ -153,10 +153,10 @@ export class AuthService {
     ipAddress: string | undefined,
     @Response() res: ExpressResponse,
   ): Promise<void> {
-    let existingUser = await this.userService.findOne(providerUser.email);
+    let existingUser = await this.usersService.findOne(providerUser.email, []);
 
     if (!existingUser) {
-      const newUser = await this.userService.registerWithProvider(providerUser);
+      const newUser = await this.usersService.registerWithProvider(providerUser);
       if (newUser) existingUser = newUser;
     }
 
@@ -184,20 +184,20 @@ export class AuthService {
   }
 
   async generateTotp(userId: string): Promise<TotpGenerateSuccessDto> {
-    const user = await this.userService.findOneById(userId);
+    const user = await this.usersService.findOneById(userId, []);
     if (!user) {
       throw new InternalServerErrorException();
     }
 
     const secret = authenticator.generateSecret();
-    const otpAuthUrl = authenticator.keyuri(user?.email, 'Crustco', secret);
+    const otpAuthUrl = authenticator.keyuri(user.email, 'Crustco', secret);
     const qrCodeUrl = await qrcode.toDataURL(otpAuthUrl);
 
     return { qrCodeUrl, secret };
   }
 
   async enableTotpVerification(userId: string, token: string, secret: string): Promise<void> {
-    const user = await this.userService.findOneById(userId);
+    const user = await this.usersService.findOneById(userId, []);
     if (!user) {
       throw new InternalServerErrorException();
     }
@@ -219,7 +219,7 @@ export class AuthService {
   }
 
   async disableTotpVerification(userId: string, token: string): Promise<void> {
-    const user = await this.userService.findOneById(userId);
+    const user = await this.usersService.findOneById(userId, []);
     if (!user) {
       throw new InternalServerErrorException();
     }
@@ -250,7 +250,7 @@ export class AuthService {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
-      const user = await this.userService.findOneById(decoded.sub);
+      const user = await this.usersService.findOneById(decoded.sub, []);
       if (!user) {
         throw new UnauthorizedException('Authentication failed. Please check your credentials.');
       }
@@ -264,7 +264,8 @@ export class AuthService {
         { email: user.email, sub: user._id.toString() },
         {
           secret: this.configService.get<string>('JWT_SECRET'),
-          expiresIn: this.configService.get<string>('ACCESS_TOKEN_EXP_TIME'),
+          expiresIn:
+            Number(this.configService.get<string>('ACCESS_TOKEN_EXP_TIME_MILLISEC')) / 1000,
         },
       );
 
@@ -272,7 +273,7 @@ export class AuthService {
         httpOnly: true,
         secure: true,
         sameSite: 'strict',
-        maxAge: 10 * 60 * 1000, // 10 minutes
+        maxAge: Number(this.configService.get<string>('ACCESS_TOKEN_EXP_TIME_MILLISEC')),
       });
 
       res.json({ message: 'Token refreshed successfully.' });
@@ -281,85 +282,81 @@ export class AuthService {
     }
   }
 
-  async getProfile(userId: string): Promise<ProfileDto> {
-    const user = await this.userService.findOneById(userId);
+  async getProfile(
+    userId: string,
+  ): Promise<Omit<UserDto, 'verificationCode' | 'verificationCodeExpiresAt' | 'totp2FAStarted'>> {
+    const user = await this.usersService.findOneById(userId, [
+      'password',
+      'verificationCode',
+      'verificationCodeExpiresAt',
+      'totpSecret',
+      'totp2FAStarted',
+    ]);
+
     if (!user) {
       throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }
 
-    const safeUser = {
-      _id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      roles: user.roles,
-      emailVerified: user.emailVerified,
-      provider: user.provider,
-      twoFactorMethod: user.twoFactorMethod,
-      totpEnabled: user.totpEnabled,
-    };
-
-    return safeUser;
+    return user;
   }
 
-  async updateProfile(userId: string, updatedInfo: ProfileUpdateDto): Promise<ProfileDto> {
-    const user = await this.userService.findOneById(userId);
+  async updateProfile(
+    userId: string,
+    updatedInfo: ProfileUpdateDto,
+  ): Promise<Omit<UserDto, 'verificationCode' | 'verificationCodeExpiresAt' | 'totp2FAStarted'>> {
+    const user = await this.usersService.findOneById(userId, []);
     const { firstName, lastName, twoFactorMethod } = updatedInfo;
 
     if (user?.totpEnabled && twoFactorMethod !== undefined) {
       throw new BadRequestException('Cannot update 2fa method when totp is enabled.');
     }
 
-    const updatedUser = await this.userService.update(userId, {
-      firstName,
-      lastName,
-      twoFactorMethod,
-    });
+    const updatedUser = await this.usersService.update(
+      userId,
+      {
+        firstName,
+        lastName,
+        twoFactorMethod,
+      },
+      ['password', 'verificationCode', 'verificationCodeExpiresAt', 'totpSecret', 'totp2FAStarted'],
+    );
 
     if (!updatedUser) {
       throw new UnauthorizedException('Authentication failed. Please check your credentials.');
     }
 
-    const safeUser = {
-      _id: updatedUser._id,
-      firstName: updatedUser.firstName,
-      lastName: updatedUser.lastName,
-      email: updatedUser.email,
-      roles: updatedUser.roles,
-      emailVerified: updatedUser.emailVerified,
-      provider: updatedUser.provider,
-      twoFactorMethod: updatedUser.twoFactorMethod,
-      totpEnabled: updatedUser.totpEnabled,
-    };
-
-    return safeUser;
+    return updatedUser;
   }
 
   async resetPassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
-    await this.userService.updatePassword(userId, oldPassword, newPassword);
+    await this.usersService.updatePassword(userId, oldPassword, newPassword);
     return;
   }
 
   async forgotPassword(email: string, code?: string, password?: string): Promise<void | User> {
     if (code || password) {
       if (code && password) {
-        return await this.userService.createNewPassword(email, code, password);
+        return await this.usersService.createNewPassword(email, code, password);
       } else {
         throw new BadRequestException('Provide valid code and password');
       }
     } else {
-      await this.userService.initializeForgotPassword(email);
+      await this.usersService.initializeForgotPassword(email);
       return;
     }
   }
 
   async request2FA(userId: string, method: TwoFactorMethod): Promise<void> {
     if (method === 'email') {
-      await this.userService.initialize2FA(userId);
+      await this.usersService.initialize2FA(userId);
     } else if (method === 'totp') {
-      await this.userService.update(userId, {
-        totp2FAStarted: true,
-      });
+      await this.usersService.update(
+        userId,
+        {
+          totp2FAStarted: true,
+        },
+        [],
+      );
     }
     return;
   }

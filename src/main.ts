@@ -16,7 +16,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api/v2');
 
   app.useGlobalPipes(
     new ValidationPipe({

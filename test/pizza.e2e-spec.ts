@@ -3,12 +3,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Server } from 'http';
 import request from 'supertest';
 
-import { PizzaService } from '../src/pizza/pizza.service';
+import { PizzasService } from '../src/pizzas/pizzas.service';
 import { AppModule } from './../src/app.module';
 
-describe('PizzaController (e2e)', () => {
+describe('PizzasController (e2e)', () => {
   let app: INestApplication;
-  const pizzaService = {
+  const pizzasService = {
     create: jest.fn(),
     getAll: jest.fn(),
     getOne: jest.fn(),
@@ -20,28 +20,28 @@ describe('PizzaController (e2e)', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
-      .overrideProvider(PizzaService)
-      .useValue(pizzaService)
+      .overrideProvider(PizzasService)
+      .useValue(pizzasService)
       .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
   });
 
-  it('/pizza (GET) - should get all pizzas', async () => {
-    pizzaService.getAll.mockResolvedValue([
+  it('/pizzas (GET) - should get all pizzas', async () => {
+    pizzasService.getAll.mockResolvedValue([
       { id: '1', name: 'Margherita', description: 'Classic pizza', price: 10 },
     ]);
 
     return request(app.getHttpServer() as Server)
-      .get('/pizza')
+      .get('/pizzas')
       .query({ category: 1, sortBy: 'price,asc' })
       .expect(200)
       .expect([{ id: '1', name: 'Margherita', description: 'Classic pizza', price: 10 }]);
   });
 
-  it('/pizza/:name (GET) - should get a pizza by name', async () => {
-    pizzaService.getOne.mockResolvedValue({
+  it('/pizzas/:name (GET) - should get a pizza by name', async () => {
+    pizzasService.getOne.mockResolvedValue({
       id: '1',
       name: 'Margherita',
       description: 'Classic pizza',
@@ -49,7 +49,7 @@ describe('PizzaController (e2e)', () => {
     });
 
     return request(app.getHttpServer() as Server)
-      .get('/pizza/Margherita')
+      .get('/pizzas/Margherita')
       .expect(200)
       .expect({
         id: '1',
@@ -59,7 +59,7 @@ describe('PizzaController (e2e)', () => {
       });
   });
 
-  it('/pizza (POST) - should create a pizza successfully', async () => {
+  it('/pizzas (POST) - should create a pizza successfully', async () => {
     const createPizzaDto = {
       id: '100',
       name: 'Margherita',
@@ -71,16 +71,16 @@ describe('PizzaController (e2e)', () => {
       sizes: [26],
     };
 
-    pizzaService.create.mockResolvedValue(createPizzaDto);
+    pizzasService.create.mockResolvedValue(createPizzaDto);
 
     return request(app.getHttpServer() as Server)
-      .post('/pizza')
+      .post('/pizzas')
       .send(createPizzaDto)
       .expect(201)
       .expect(createPizzaDto);
   });
 
-  it('/pizza (POST) - should return 400 for duplicate pizza', async () => {
+  it('/pizzas (POST) - should return 400 for duplicate pizza', async () => {
     const createPizzaDto = {
       id: '100',
       name: 'Margherita',
@@ -92,12 +92,12 @@ describe('PizzaController (e2e)', () => {
       sizes: [26],
     };
 
-    pizzaService.create.mockRejectedValue({
+    pizzasService.create.mockRejectedValue({
       code: 11000, // Simulating MongoDB duplicate error code
     });
 
     return request(app.getHttpServer() as Server)
-      .post('/pizza')
+      .post('/pizzas')
       .send(createPizzaDto)
       .expect(400)
       .expect({
@@ -106,35 +106,35 @@ describe('PizzaController (e2e)', () => {
       });
   });
 
-  it('/pizza/:id (PATCH) - should update a pizza successfully', async () => {
+  it('/pizzas/:id (PATCH) - should update a pizza successfully', async () => {
     const updatePizzaDto = { name: 'Updated Pizza' };
     const updatedPizza = { ...updatePizzaDto, id: '1' };
 
-    pizzaService.update.mockResolvedValue(updatedPizza);
+    pizzasService.update.mockResolvedValue(updatedPizza);
 
     return request(app.getHttpServer() as Server)
-      .patch('/pizza/1')
+      .patch('/pizzas/1')
       .send(updatePizzaDto)
       .expect(200)
       .expect(updatedPizza);
   });
 
-  it('/pizza/:id (DELETE) - should delete a pizza successfully', async () => {
+  it('/pizzas/:id (DELETE) - should delete a pizza successfully', async () => {
     const deleteResponse = { message: 'The pizza with #1 was successfully deleted' };
 
-    pizzaService.delete.mockResolvedValue(deleteResponse);
+    pizzasService.delete.mockResolvedValue(deleteResponse);
 
     return request(app.getHttpServer() as Server)
-      .delete('/pizza/1')
+      .delete('/pizzas/1')
       .expect(200)
       .expect(deleteResponse);
   });
 
-  it('/pizza/:id (DELETE) - should return 400 for pizza not found', async () => {
-    pizzaService.delete.mockRejectedValue(new Error('Pizza not found'));
+  it('/pizzas/:id (DELETE) - should return 400 for pizza not found', async () => {
+    pizzasService.delete.mockRejectedValue(new Error('Pizza not found'));
 
     return request(app.getHttpServer() as Server)
-      .delete('/pizza/100')
+      .delete('/pizzas/100')
       .expect(400)
       .expect({ statusCode: 400, message: 'Pizza not found' });
   });
