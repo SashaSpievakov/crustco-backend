@@ -27,14 +27,63 @@ export function setupSwagger(app: INestApplication) {
 
       route.responses = route.responses || {};
 
+      const methodUpper = method.toUpperCase();
+      const mutatingMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+      if (mutatingMethods.includes(methodUpper) && !route.responses[400]) {
+        route.responses[400] = {
+          description: 'Bad Request',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['message', 'error', 'statusCode'],
+                properties: {
+                  message: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'List of validation error messages',
+                    example: [
+                      'id must be a string',
+                      'password must be longer than or equal to 8 characters',
+                    ],
+                  },
+                  error: {
+                    type: 'string',
+                    description: 'The type of error',
+                    example: 'Bad Request',
+                  },
+                  statusCode: {
+                    type: 'number',
+                    description: 'The HTTP status code of the error',
+                    example: 400,
+                  },
+                },
+              },
+            },
+          },
+        };
+      }
+
       if (!route.responses[500]) {
         route.responses[500] = {
           description: 'Internal server error',
           content: {
             'application/json': {
-              example: {
-                statusCode: 500,
-                message: 'Internal server error',
+              schema: {
+                type: 'object',
+                required: ['statusCode', 'message'],
+                properties: {
+                  statusCode: {
+                    type: 'number',
+                    description: 'HTTP status code of the error response',
+                    example: 500,
+                  },
+                  message: {
+                    type: 'string',
+                    description: 'The error message providing details about the issue',
+                    example: 'Internal server error',
+                  },
+                },
               },
             },
           },
@@ -47,9 +96,21 @@ export function setupSwagger(app: INestApplication) {
           description: 'Unauthorized',
           content: {
             'application/json': {
-              example: {
-                statusCode: 401,
-                message: 'Unauthorized',
+              schema: {
+                type: 'object',
+                required: ['statusCode', 'message'],
+                properties: {
+                  statusCode: {
+                    type: 'number',
+                    description: 'HTTP status code of the error response',
+                    example: 401,
+                  },
+                  message: {
+                    type: 'string',
+                    description: 'The error message providing details about the issue',
+                    example: 'Unauthorized',
+                  },
+                },
               },
             },
           },

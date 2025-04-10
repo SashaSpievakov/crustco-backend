@@ -18,7 +18,6 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { NotFoundErrorResponseDto } from 'src/common/dto/not-found-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { ServerErrorResponseDto } from 'src/common/dto/server-error.dto';
-import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { isMongooseException } from 'src/common/utils/mongoose.utils';
@@ -85,11 +84,6 @@ export class PizzasController {
     description: 'Pizza created successfully',
     type: PizzaDto,
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
-  })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('Admin')
   @Post()
@@ -119,11 +113,6 @@ export class PizzasController {
     status: 200,
     description: 'Pizza updated successfully',
     type: PizzaDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
   })
   @ApiResponse({
     status: 404,
