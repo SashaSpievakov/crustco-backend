@@ -69,9 +69,21 @@ export function setupSwagger(app: INestApplication) {
           description: 'Internal server error',
           content: {
             'application/json': {
-              example: {
-                statusCode: 500,
-                message: 'Internal server error',
+              schema: {
+                type: 'object',
+                required: ['statusCode', 'message'],
+                properties: {
+                  statusCode: {
+                    type: 'number',
+                    description: 'HTTP status code of the error response',
+                    example: 500,
+                  },
+                  message: {
+                    type: 'string',
+                    description: 'The error message providing details about the issue',
+                    example: 'Internal server error',
+                  },
+                },
               },
             },
           },
@@ -84,9 +96,21 @@ export function setupSwagger(app: INestApplication) {
           description: 'Unauthorized',
           content: {
             'application/json': {
-              example: {
-                statusCode: 401,
-                message: 'Unauthorized',
+              schema: {
+                type: 'object',
+                required: ['statusCode', 'message'],
+                properties: {
+                  statusCode: {
+                    type: 'number',
+                    description: 'HTTP status code of the error response',
+                    example: 401,
+                  },
+                  message: {
+                    type: 'string',
+                    description: 'The error message providing details about the issue',
+                    example: 'Unauthorized',
+                  },
+                },
               },
             },
           },
