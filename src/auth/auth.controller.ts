@@ -21,7 +21,6 @@ import { ApiCookieAuth } from 'src/common/decorators/api-cookie-auth.decorator';
 import { ConflictErrorResponseDto } from 'src/common/dto/conflict-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
 import { UnauthorizedErrorResponseDto } from 'src/common/dto/unauthorized-error.dto';
-import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
 import { GithubAuthGuard } from 'src/common/guards/github-auth.guard';
 import { GoogleAuthGuard } from 'src/common/guards/google-auth.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -59,11 +58,6 @@ export class AuthController {
     status: 202,
     description: 'Two-factor authentication required',
     type: TwoFactorSuccess,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -104,11 +98,6 @@ export class AuthController {
     status: 200,
     description: 'Logged in successfully',
     type: RequestSuccessDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
   })
   @Post('verify-2fa')
   @HttpCode(HttpStatus.OK)
@@ -155,11 +144,6 @@ export class AuthController {
     type: RequestSuccessDto,
   })
   @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
-  })
-  @ApiResponse({
     status: 409,
     description: 'TOTP is already enabled for this user',
     type: ConflictErrorResponseDto,
@@ -182,11 +166,6 @@ export class AuthController {
     status: 200,
     description: 'Successfully disabled TOTP verification',
     type: RequestSuccessDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
   })
   @ApiResponse({
     status: 409,
@@ -292,11 +271,6 @@ export class AuthController {
     description: 'Registration requested',
     type: RequestSuccessDto,
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
-  })
   @Post('register')
   async register(@Body() registerBody: RegisterInputDto): Promise<RequestSuccessDto> {
     return await this.authService.register(
@@ -313,11 +287,6 @@ export class AuthController {
     status: 200,
     description: 'Verification is successful',
     type: RequestSuccessDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
   })
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
@@ -377,11 +346,6 @@ export class AuthController {
     description: 'Updated user profile',
     type: OmitType(UserDto, ['verificationCode', 'verificationCodeExpiresAt', 'totp2FAStarted']),
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
-  })
   @ApiCookieAuth()
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
@@ -399,11 +363,6 @@ export class AuthController {
     status: 200,
     description: 'Password reset successfully',
     type: RequestSuccessDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
   })
   @ApiCookieAuth()
   @UseGuards(JwtAuthGuard)
@@ -427,11 +386,6 @@ export class AuthController {
     status: 200,
     description: 'Password reset successfully',
     type: RequestSuccessDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
   })
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)

@@ -136,11 +136,6 @@ export class UsersController {
     type: RequestSuccessDto,
   })
   @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
-  })
-  @ApiResponse({
     status: 404,
     description: 'User not found',
     type: NotFoundErrorResponseDto,
