@@ -1,9 +1,13 @@
 import { INestApplication } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, getSchemaPath, SwaggerModule } from '@nestjs/swagger';
 import {
   OperationObject,
   PathItemObject,
 } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
+
+import { ServerErrorResponseDto } from './common/dto/server-error.dto';
+import { UnauthorizedErrorResponseDto } from './common/dto/unauthorized-error.dto';
+import { ValidationErrorResponseDto } from './common/dto/validation-error.dto';
 
 export function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
@@ -17,7 +21,15 @@ export function setupSwagger(app: INestApplication) {
     })
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  const schemaRef = (dto: Function) => ({
+    allOf: [{ $ref: getSchemaPath(dto) }],
+    title: dto.name,
+  });
+
+  const document = SwaggerModule.createDocument(app, config, {
+    extraModels: [ServerErrorResponseDto, ValidationErrorResponseDto, UnauthorizedErrorResponseDto],
+  });
 
   Object.keys(document.paths).forEach((path) => {
     const pathItem = document.paths[path];
@@ -34,31 +46,7 @@ export function setupSwagger(app: INestApplication) {
           description: 'Bad Request',
           content: {
             'application/json': {
-              schema: {
-                type: 'object',
-                required: ['message', 'error', 'statusCode'],
-                properties: {
-                  message: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'List of validation error messages',
-                    example: [
-                      'id must be a string',
-                      'password must be longer than or equal to 8 characters',
-                    ],
-                  },
-                  error: {
-                    type: 'string',
-                    description: 'The type of error',
-                    example: 'Bad Request',
-                  },
-                  statusCode: {
-                    type: 'number',
-                    description: 'The HTTP status code of the error',
-                    example: 400,
-                  },
-                },
-              },
+              schema: schemaRef(ValidationErrorResponseDto),
             },
           },
         };
@@ -69,22 +57,7 @@ export function setupSwagger(app: INestApplication) {
           description: 'Internal server error',
           content: {
             'application/json': {
-              schema: {
-                type: 'object',
-                required: ['statusCode', 'message'],
-                properties: {
-                  statusCode: {
-                    type: 'number',
-                    description: 'HTTP status code of the error response',
-                    example: 500,
-                  },
-                  message: {
-                    type: 'string',
-                    description: 'The error message providing details about the issue',
-                    example: 'Internal server error',
-                  },
-                },
-              },
+              schema: schemaRef(ServerErrorResponseDto),
             },
           },
         };
@@ -96,22 +69,7 @@ export function setupSwagger(app: INestApplication) {
           description: 'Unauthorized',
           content: {
             'application/json': {
-              schema: {
-                type: 'object',
-                required: ['statusCode', 'message'],
-                properties: {
-                  statusCode: {
-                    type: 'number',
-                    description: 'HTTP status code of the error response',
-                    example: 401,
-                  },
-                  message: {
-                    type: 'string',
-                    description: 'The error message providing details about the issue',
-                    example: 'Unauthorized',
-                  },
-                },
-              },
+              schema: schemaRef(UnauthorizedErrorResponseDto),
             },
           },
         };

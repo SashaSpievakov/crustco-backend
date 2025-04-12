@@ -14,7 +14,6 @@ import { ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from 
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { NotFoundErrorResponseDto } from 'src/common/dto/not-found-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
-import { ValidationErrorResponseDto } from 'src/common/dto/validation-error.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 
@@ -93,11 +92,6 @@ export class UsersController {
     status: 200,
     description: 'Updated user',
     type: UserDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid input',
-    type: ValidationErrorResponseDto,
   })
   @ApiResponse({
     status: 404,
