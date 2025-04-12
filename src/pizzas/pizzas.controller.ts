@@ -17,7 +17,6 @@ import { ApiBody, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/s
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { NotFoundErrorResponseDto } from 'src/common/dto/not-found-error.dto';
 import { RequestSuccessDto } from 'src/common/dto/request-success.dto';
-import { ServerErrorResponseDto } from 'src/common/dto/server-error.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { isMongooseException } from 'src/common/utils/mongoose.utils';
@@ -38,11 +37,6 @@ export class PizzasController {
     status: 200,
     description: 'List of all pizzas',
     type: [PizzaDto],
-  })
-  @ApiResponse({
-    status: 500,
-    description: 'Internal server error',
-    type: ServerErrorResponseDto,
   })
   @ApiQuery({ name: 'category', required: false, example: 1 })
   @ApiQuery({ name: 'sortBy', required: false, example: 'price,asc' })
