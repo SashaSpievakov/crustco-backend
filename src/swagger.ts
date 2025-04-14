@@ -6,6 +6,7 @@ import {
 } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
 
 import { ServerErrorResponseDto } from './common/dto/server-error.dto';
+import { TooManyRequestsErrorResponseDto } from './common/dto/too-many-requests-error.dto';
 import { UnauthorizedErrorResponseDto } from './common/dto/unauthorized-error.dto';
 import { ValidationErrorResponseDto } from './common/dto/validation-error.dto';
 
@@ -28,7 +29,12 @@ export function setupSwagger(app: INestApplication) {
   });
 
   const document = SwaggerModule.createDocument(app, config, {
-    extraModels: [ServerErrorResponseDto, ValidationErrorResponseDto, UnauthorizedErrorResponseDto],
+    extraModels: [
+      ServerErrorResponseDto,
+      ValidationErrorResponseDto,
+      UnauthorizedErrorResponseDto,
+      TooManyRequestsErrorResponseDto,
+    ],
   });
 
   Object.keys(document.paths).forEach((path) => {
@@ -47,6 +53,17 @@ export function setupSwagger(app: INestApplication) {
           content: {
             'application/json': {
               schema: schemaRef(ValidationErrorResponseDto),
+            },
+          },
+        };
+      }
+
+      if (!route.responses[429]) {
+        route.responses[429] = {
+          description: 'Too Many Requests',
+          content: {
+            'application/json': {
+              schema: schemaRef(TooManyRequestsErrorResponseDto),
             },
           },
         };
